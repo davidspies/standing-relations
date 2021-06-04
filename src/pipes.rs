@@ -5,7 +5,10 @@ pub struct Sender<T>(Rc<RefCell<Vec<T>>>);
 pub struct Receiver<T>(Rc<RefCell<Vec<T>>>);
 
 impl<T> Sender<T> {
-    pub fn send(&self, data: Vec<T>) {
+    pub fn send(&self, data: T) {
+        self.0.borrow_mut().push(data)
+    }
+    pub fn send_all(&self, data: Vec<T>) {
         self.0.borrow_mut().extend(data)
     }
 }
