@@ -1,3 +1,8 @@
+pub mod concat;
+pub mod dynamic;
+pub mod input;
+pub mod split;
+
 pub trait Op {
     type T;
 

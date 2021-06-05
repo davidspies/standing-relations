@@ -1,6 +1,6 @@
 mod global_id;
 
-use crate::input::IsInputHandler;
+use crate::op::input::IsInputHandler;
 
 pub type ContextId = usize;
 
