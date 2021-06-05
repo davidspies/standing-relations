@@ -12,7 +12,10 @@ fn it_works() {
     inp.add('a');
     inp.add('b');
     inp.remove('b');
-    assert_eq!(&*outp.get(), &HashMap::new());
+    assert_eq!(&*outp.get(&context), &HashMap::new());
     context.commit();
-    assert_eq!(&*outp.get(), &HashMap::from_iter(vec![('a', 2), ('b', 1)]));
+    assert_eq!(
+        &*outp.get(&context),
+        &HashMap::from_iter(vec![('a', 2), ('b', 1)])
+    );
 }
