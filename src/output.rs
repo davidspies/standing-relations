@@ -15,7 +15,7 @@ impl<D, C: Op<T = (D, isize)>> Relation<C> {
     pub fn get_output<M: CountMap<D>>(self) -> Output<D, C, M> {
         Output {
             context_id: self.context_id,
-            dirty: self.dirty,
+            dirty: self.dirty.to_receive(),
             inner: RefCell::new(self.inner),
             data: RefCell::new(M::empty()),
         }

@@ -1,60 +1,84 @@
 use std::{cell::RefCell, rc::Rc};
 
-pub struct DirtySend(Rc<RefCell<DirtyInner>>);
-pub struct DirtyReceive(Rc<RefCell<DirtyInner>>);
+pub struct ReceiveBuilder(Vec<Rc<RefCell<dyn IsNode>>>);
+pub struct DirtySend(Rc<RefCell<SendNode>>);
+pub struct DirtyReceive(Rc<RefCell<Node>>);
 
-struct DirtyInner {
+struct SendNode(Option<Rc<RefCell<Node>>>);
+struct Node {
     dirty: bool,
-    targets: Vec<Rc<RefCell<DirtyInner>>>,
+    targets: Vec<Rc<RefCell<Node>>>,
 }
 
-impl DirtyInner {
-    fn new() -> Self {
-        DirtyInner {
+trait IsNode {
+    fn add_target(&mut self, target: Rc<RefCell<Node>>);
+}
+
+impl IsNode for SendNode {
+    fn add_target(&mut self, target: Rc<RefCell<Node>>) {
+        assert!(self.0.is_none());
+        self.0 = Some(target);
+    }
+}
+
+impl IsNode for Node {
+    fn add_target(&mut self, target: Rc<RefCell<Node>>) {
+        self.targets.push(target);
+    }
+}
+
+pub fn new() -> (DirtySend, ReceiveBuilder) {
+    let send_node = Rc::new(RefCell::new(SendNode(None)));
+    (
+        DirtySend(Rc::clone(&send_node)),
+        ReceiveBuilder(vec![send_node]),
+    )
+}
+
+impl ReceiveBuilder {
+    pub fn to_receive(self) -> DirtyReceive {
+        let result = Rc::new(RefCell::new(Node {
             dirty: false,
-            targets: Vec::new(),
+            targets: vec![],
+        }));
+        for t in self.0 {
+            (*t).borrow_mut().add_target(Rc::clone(&result));
+        }
+        DirtyReceive(result)
+    }
+    pub fn or(self, other: Self) -> Self {
+        let mut result = self.0;
+        result.extend(other.0);
+        ReceiveBuilder(result)
+    }
+}
+
+impl DirtyReceive {
+    pub fn add_target(&mut self) -> ReceiveBuilder {
+        ReceiveBuilder(vec![Rc::clone(&self.0) as Rc<RefCell<dyn IsNode>>])
+    }
+    pub fn take_status(&self) -> bool {
+        let dirty = self.0.borrow().dirty;
+        if dirty {
+            (*self.0).borrow_mut().dirty = false;
+        }
+        dirty
+    }
+}
+
+fn set_dirty_inner(this: &Rc<RefCell<Node>>) {
+    if !this.borrow().dirty {
+        this.borrow_mut().dirty = true;
+        for target in &this.borrow().targets {
+            set_dirty_inner(target);
         }
     }
 }
 
 impl DirtySend {
     pub fn set_dirty(&self) {
-        set_dirty_inner(&self.0)
-    }
-}
-
-fn set_dirty_inner(this: &Rc<RefCell<DirtyInner>>) {
-    if this.borrow().dirty {
-        return;
-    }
-    this.borrow_mut().dirty = true;
-    for t in &this.borrow().targets {
-        set_dirty_inner(t);
-    }
-}
-
-impl DirtyReceive {
-    pub fn add_target(&mut self) -> DirtyReceive {
-        let d = Rc::new(RefCell::new(DirtyInner::new()));
-        self.0.borrow_mut().targets.push(Rc::clone(&self.0));
-        DirtyReceive(d)
-    }
-    pub fn or(self, other: Self) -> DirtyReceive {
-        let d = Rc::new(RefCell::new(DirtyInner::new()));
-        self.0.borrow_mut().targets.push(Rc::clone(&self.0));
-        other.0.borrow_mut().targets.push(Rc::clone(&other.0));
-        DirtyReceive(d)
-    }
-    pub fn take_status(&self) -> bool {
-        let dirty = self.0.borrow().dirty;
-        if dirty {
-            self.0.borrow_mut().dirty = false;
+        if let Some(inner) = self.0.borrow().0.as_ref() {
+            set_dirty_inner(inner);
         }
-        dirty
     }
-}
-
-pub fn new() -> (DirtySend, DirtyReceive) {
-    let d = Rc::new(RefCell::new(DirtyInner::new()));
-    (DirtySend(Rc::clone(&d)), DirtyReceive(d))
 }

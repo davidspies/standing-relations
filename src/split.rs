@@ -37,11 +37,12 @@ where
 }
 
 impl<C: Op> Relation<C> {
-    pub fn split(mut self) -> Relation<Split<C>>
+    pub fn split(self) -> Relation<Split<C>>
     where
         C::T: Clone,
     {
-        let dirty = self.dirty.add_target();
+        let mut this_dirty = self.dirty.to_receive();
+        let dirty = this_dirty.add_target();
         let (sender, receiver) = pipes::new();
         Relation {
             context_id: self.context_id,
@@ -50,7 +51,7 @@ impl<C: Op> Relation<C> {
                 inner: Rc::new(RefCell::new(SplitInner {
                     inner: self.inner,
                     senders: vec![sender],
-                    dirty: self.dirty,
+                    dirty: this_dirty,
                 })),
                 receiver,
             },
