@@ -1,3 +1,5 @@
+mod with_clones;
+
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
@@ -5,8 +7,9 @@ use crate::{
     op::Op,
     pipes::{self, Receiver, Sender},
     relation::Relation,
-    with_clones::WithClones,
 };
+
+use self::with_clones::WithClones;
 
 pub struct Split<C: Op> {
     inner: Rc<RefCell<SplitInner<C>>>,

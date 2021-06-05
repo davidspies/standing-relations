@@ -3,15 +3,12 @@ mod context;
 mod count_map;
 mod dirty;
 mod dynamic;
-mod global_id;
 mod input;
 mod op;
 mod output;
 mod pipes;
-mod rc_collection;
 mod relation;
 mod split;
-mod with_clones;
 
 pub use concat::Concat;
 pub use context::Context;
