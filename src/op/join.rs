@@ -45,6 +45,53 @@ impl<
     }
 }
 
+pub struct AntiJoin<K, V, C1: Op<T = ((K, V), isize)>, C2: Op<T = (K, isize)>> {
+    left: C1,
+    left_map: HashMap<K, HashMap<V, isize>>,
+    right: C2,
+    right_map: HashMap<K, isize>,
+}
+
+impl<
+        K: Eq + Hash + Clone,
+        V: Eq + Hash + Clone,
+        C1: Op<T = ((K, V), isize)>,
+        C2: Op<T = (K, isize)>,
+    > Op for AntiJoin<K, V, C1, C2>
+{
+    type T = ((K, V), isize);
+
+    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
+        let AntiJoin {
+            left,
+            left_map,
+            right,
+            right_map,
+        } = self;
+        left.foreach(|((k, x), x_count)| {
+            if !right_map.contains_key(&k) {
+                continuation(((k.clone(), x.clone()), x_count));
+            }
+            left_map.add((k, x), x_count);
+        });
+        right.foreach(|(k, y_count)| {
+            if y_count != 0 {
+                let old_count = right_map.get(&k).map(Clone::clone).unwrap_or(0);
+                if old_count == -y_count {
+                    for (x, &x_count) in left_map.get(&k).into_flat_iter() {
+                        continuation(((k.clone(), x.clone()), x_count));
+                    }
+                } else if old_count == 0 {
+                    for (x, &x_count) in left_map.get(&k).into_flat_iter() {
+                        continuation(((k.clone(), x.clone()), -x_count));
+                    }
+                }
+                right_map.add(k, y_count);
+            }
+        });
+    }
+}
+
 impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<T = ((K, V1), isize)>> Relation<C1> {
     pub fn join<V2: Clone + Eq + Hash, C2: Op<T = ((K, V2), isize)>>(
         self,
@@ -55,6 +102,23 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<T = ((K, V1), isize)>> 
             context_id: self.context_id,
             dirty: self.dirty.or(other.dirty),
             inner: Join {
+                left: self.inner,
+                left_map: HashMap::new(),
+                right: other.inner,
+                right_map: HashMap::new(),
+            },
+        }
+    }
+
+    pub fn anti_join<C2: Op<T = (K, isize)>>(
+        self,
+        other: Relation<C2>,
+    ) -> Relation<AntiJoin<K, V1, C1, C2>> {
+        assert_eq!(self.context_id, other.context_id, "Context mismatch");
+        Relation {
+            context_id: self.context_id,
+            dirty: self.dirty.or(other.dirty),
+            inner: AntiJoin {
                 left: self.inner,
                 left_map: HashMap::new(),
                 right: other.inner,
