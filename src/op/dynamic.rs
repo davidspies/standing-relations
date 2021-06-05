@@ -1,26 +1,29 @@
-use std::vec;
+use std::marker::PhantomData;
 
 use crate::{Op, Relation};
 
-pub struct Dynamic<'a, T>(Box<dyn 'a + Op<T = T, I = vec::IntoIter<T>>>);
+pub struct Dynamic<'a, T>(Box<dyn 'a + Op<T = T, I = Box<dyn 'a + Iterator<Item = T>>>>);
 
-impl<T> Op for Dynamic<'_, T> {
+impl<'a, T> Op for Dynamic<'a, T> {
     type T = T;
-    type I = vec::IntoIter<T>;
+    type I = Box<dyn 'a + Iterator<Item = T>>;
 
     fn get(&mut self) -> Self::I {
         self.0.get()
     }
 }
 
-struct Vected<C>(C);
+struct BoxedIter<'a, C>(C, PhantomData<&'a ()>);
 
-impl<C: Op> Op for Vected<C> {
+impl<'a, C: Op> Op for BoxedIter<'a, C>
+where
+    C::I: 'a,
+{
     type T = C::T;
-    type I = vec::IntoIter<C::T>;
+    type I = Box<dyn 'a + Iterator<Item = C::T>>;
 
     fn get(&mut self) -> Self::I {
-        self.0.get().collect::<Vec<_>>().into_iter()
+        Box::new(self.0.get())
     }
 }
 
@@ -32,7 +35,7 @@ impl<C: Op> Relation<C> {
         Relation {
             context_id: self.context_id,
             dirty: self.dirty,
-            inner: Dynamic(Box::new(Vected(self.inner))),
+            inner: Dynamic(Box::new(BoxedIter(self.inner, PhantomData))),
         }
     }
 }
