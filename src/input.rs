@@ -1,9 +1,7 @@
 use crate::{
-    context::Context,
     dirty::{self, DirtySend},
-    op::Op,
     pipes::{self, Receiver},
-    relation::Relation,
+    Context, Op, Relation,
 };
 
 pub trait IsInputHandler {

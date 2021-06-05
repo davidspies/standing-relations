@@ -3,13 +3,7 @@ use std::{
     collections::HashMap,
 };
 
-use crate::{
-    context::{Context, ContextId},
-    count_map::CountMap,
-    dirty::DirtyReceive,
-    op::Op,
-    relation::Relation,
-};
+use crate::{context::ContextId, dirty::DirtyReceive, Context, CountMap, Op, Relation};
 
 impl<D, C: Op<T = (D, isize)>> Relation<C> {
     pub fn get_output<M: CountMap<D>>(self) -> Output<D, C, M> {

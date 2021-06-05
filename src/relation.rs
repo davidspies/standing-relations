@@ -1,4 +1,4 @@
-use crate::{context::ContextId, dirty::ReceiveBuilder, op::Op};
+use crate::{context::ContextId, dirty::ReceiveBuilder, Op};
 
 pub struct Relation<C: Op + ?Sized> {
     pub(crate) context_id: ContextId,
