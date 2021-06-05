@@ -1,6 +1,7 @@
 pub mod concat;
 pub mod dynamic;
 pub mod input;
+pub mod join;
 pub mod map;
 pub mod split;
 
