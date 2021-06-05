@@ -1,6 +1,7 @@
 mod context;
 mod count_map;
 mod dirty;
+mod dynamic;
 mod global_id;
 mod input;
 mod op;
@@ -12,6 +13,7 @@ mod with_clones;
 
 pub use context::Context;
 pub use count_map::CountMap;
+pub use dynamic::Dynamic;
 pub use input::{Input, InputSender};
 pub use op::Op;
 pub use output::Output;

@@ -4,8 +4,8 @@ use crate::{
     dirty::DirtyReceive,
     op::Op,
     pipes::{self, Receiver, Sender},
+    relation::Relation,
     with_clones::WithClones,
-    Relation,
 };
 
 pub struct Split<C: Op> {
