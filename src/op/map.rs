@@ -1,5 +1,3 @@
-use std::iter;
-
 use crate::{Op, Relation};
 
 pub struct FlatMap<C: Op, I: IntoIterator, F: Fn(C::T) -> I> {
@@ -21,7 +19,7 @@ impl<C: Op, I: IntoIterator, F: Fn(C::T) -> I> Op for FlatMap<C, I, F> {
 }
 
 impl<C: Op> Relation<C> {
-    pub fn flat_map<I: IntoIterator, F: Fn(C::T) -> I>(self, f: F) -> Relation<FlatMap<C, I, F>> {
+    pub fn flat_map_<I: IntoIterator, F: Fn(C::T) -> I>(self, f: F) -> Relation<FlatMap<C, I, F>> {
         Relation {
             context_id: self.context_id,
             dirty: self.dirty,
@@ -30,17 +28,5 @@ impl<C: Op> Relation<C> {
                 f,
             },
         }
-    }
-    pub fn map<'a, Y: 'a, F: Fn(C::T) -> Y + 'a>(self, f: F) -> Relation<impl Op<T = Y> + 'a>
-    where
-        C: 'a,
-    {
-        self.flat_map(move |x| iter::once(f(x)))
-    }
-    pub fn filter<'a, F: Fn(&C::T) -> bool + 'a>(self, f: F) -> Relation<impl Op<T = C::T> + 'a>
-    where
-        C: 'a,
-    {
-        self.flat_map(move |x| if f(&x) { Some(x) } else { None })
     }
 }
