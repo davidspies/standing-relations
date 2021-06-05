@@ -46,12 +46,11 @@ impl DirtyReceive {
         DirtyReceive(d)
     }
     pub fn take_status(&self) -> bool {
-        if self.0.borrow().dirty {
+        let dirty = self.0.borrow().dirty;
+        if dirty {
             self.0.borrow_mut().dirty = false;
-            true
-        } else {
-            false
         }
+        dirty
     }
 }
 
