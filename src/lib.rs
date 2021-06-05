@@ -8,6 +8,7 @@ mod input;
 mod op;
 mod output;
 mod pipes;
+mod rc_collection;
 mod relation;
 mod split;
 mod with_clones;

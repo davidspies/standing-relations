@@ -1,13 +1,15 @@
 use std::{cell::RefCell, rc::Rc};
 
-pub struct ReceiveBuilder(Vec<Rc<RefCell<dyn IsNode>>>);
+use crate::rc_collection::RcCollection;
+
+pub struct ReceiveBuilder(RcCollection<RefCell<dyn IsNode>>);
 pub struct DirtySend(Rc<RefCell<SendNode>>);
 pub struct DirtyReceive(Rc<RefCell<Node>>);
 
 struct SendNode(Option<Rc<RefCell<Node>>>);
 struct Node {
     dirty: bool,
-    targets: Vec<Rc<RefCell<Node>>>,
+    targets: RcCollection<RefCell<Node>>,
 }
 
 trait IsNode {
@@ -23,7 +25,7 @@ impl IsNode for SendNode {
 
 impl IsNode for Node {
     fn add_target(&mut self, target: Rc<RefCell<Node>>) {
-        self.targets.push(target);
+        self.targets.insert(target);
     }
 }
 
@@ -31,7 +33,7 @@ pub fn new() -> (DirtySend, ReceiveBuilder) {
     let send_node = Rc::new(RefCell::new(SendNode(None)));
     (
         DirtySend(Rc::clone(&send_node)),
-        ReceiveBuilder(vec![send_node]),
+        ReceiveBuilder(RcCollection::singleton(send_node)),
     )
 }
 
@@ -39,7 +41,7 @@ impl ReceiveBuilder {
     pub fn to_receive(self) -> DirtyReceive {
         let result = Rc::new(RefCell::new(Node {
             dirty: false,
-            targets: vec![],
+            targets: RcCollection::new(),
         }));
         for t in self.0 {
             t.borrow_mut().add_target(Rc::clone(&result));
@@ -55,7 +57,9 @@ impl ReceiveBuilder {
 
 impl DirtyReceive {
     pub fn add_target(&mut self) -> ReceiveBuilder {
-        ReceiveBuilder(vec![Rc::clone(&self.0) as Rc<RefCell<dyn IsNode>>])
+        ReceiveBuilder(RcCollection::singleton(
+            Rc::clone(&self.0) as Rc<RefCell<dyn IsNode>>
+        ))
     }
     pub fn take_status(&self) -> bool {
         let dirty = self.0.borrow().dirty;
