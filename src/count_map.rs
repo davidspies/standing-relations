@@ -5,7 +5,6 @@ use std::{
 
 pub trait CountMap<K>: Sized {
     fn add(&mut self, k: K, count: isize);
-    fn is_empty(&self) -> bool;
     fn empty() -> Self;
     fn singleton(k: K, count: isize) -> Self {
         let mut result: Self = Self::empty();
@@ -14,7 +13,11 @@ pub trait CountMap<K>: Sized {
     }
 }
 
-impl<K1: Eq + Hash, K2, M: CountMap<K2>> CountMap<(K1, K2)> for HashMap<K1, M> {
+pub trait Observable {
+    fn is_empty(&self) -> bool;
+}
+
+impl<K1: Eq + Hash, K2, M: CountMap<K2> + Observable> CountMap<(K1, K2)> for HashMap<K1, M> {
     fn add(&mut self, k: (K1, K2), count: isize) {
         if count == 0 {
             return;
@@ -34,16 +37,18 @@ impl<K1: Eq + Hash, K2, M: CountMap<K2>> CountMap<(K1, K2)> for HashMap<K1, M> {
         }
     }
 
-    fn is_empty(&self) -> bool {
-        HashMap::is_empty(self)
-    }
-
     fn empty() -> Self {
         HashMap::new()
     }
 }
 
-impl<K1: Eq + Ord, K2, M: CountMap<K2>> CountMap<(K1, K2)> for BTreeMap<K1, M> {
+impl<K, V> Observable for HashMap<K, V> {
+    fn is_empty(&self) -> bool {
+        HashMap::is_empty(self)
+    }
+}
+
+impl<K1: Eq + Ord, K2, M: CountMap<K2> + Observable> CountMap<(K1, K2)> for BTreeMap<K1, M> {
     fn add(&mut self, k: (K1, K2), count: isize) {
         if count == 0 {
             return;
@@ -63,12 +68,14 @@ impl<K1: Eq + Ord, K2, M: CountMap<K2>> CountMap<(K1, K2)> for BTreeMap<K1, M> {
         }
     }
 
-    fn is_empty(&self) -> bool {
-        BTreeMap::is_empty(self)
-    }
-
     fn empty() -> Self {
         BTreeMap::new()
+    }
+}
+
+impl<K, V> Observable for BTreeMap<K, V> {
+    fn is_empty(&self) -> bool {
+        BTreeMap::is_empty(self)
     }
 }
 
@@ -77,12 +84,14 @@ impl CountMap<()> for isize {
         *self += count
     }
 
-    fn is_empty(&self) -> bool {
-        *self == 0
-    }
-
     fn empty() -> Self {
         0
+    }
+}
+
+impl Observable for isize {
+    fn is_empty(&self) -> bool {
+        *self == 0
     }
 }
 
@@ -91,22 +100,14 @@ impl<K: Eq + Hash> CountMap<K> for HashMap<K, isize> {
         CountMap::<(K, ())>::add(self, (k, ()), count)
     }
 
-    fn is_empty(&self) -> bool {
-        CountMap::<(K, ())>::is_empty(self)
-    }
-
     fn empty() -> Self {
         CountMap::<(K, ())>::empty()
     }
 }
 
-impl<K: Eq + Ord> CountMap<K> for BTreeMap<K, isize> {
+impl<K: Ord> CountMap<K> for BTreeMap<K, isize> {
     fn add(&mut self, k: K, count: isize) {
         CountMap::<(K, ())>::add(self, (k, ()), count)
-    }
-
-    fn is_empty(&self) -> bool {
-        CountMap::<(K, ())>::is_empty(self)
     }
 
     fn empty() -> Self {

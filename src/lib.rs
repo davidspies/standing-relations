@@ -9,7 +9,7 @@ mod pipes;
 mod relation;
 
 pub use context::Context;
-pub use count_map::CountMap;
+pub use count_map::{CountMap, Observable};
 pub use op::concat::Concat;
 pub use op::dynamic::Dynamic;
 pub use op::input::{Input, InputSender};
