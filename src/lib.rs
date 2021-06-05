@@ -1,3 +1,5 @@
+#![feature(type_alias_impl_trait)]
+
 mod context;
 mod count_map;
 mod dirty;
@@ -11,6 +13,7 @@ pub use count_map::CountMap;
 pub use op::concat::Concat;
 pub use op::dynamic::Dynamic;
 pub use op::input::{Input, InputSender};
+pub use op::map::FlatMap;
 pub use op::split::Split;
 pub use op::Op;
 pub use output::Output;

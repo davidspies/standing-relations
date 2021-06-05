@@ -28,9 +28,9 @@ impl<D, C: Op<T = (D, isize)>, M: CountMap<D>> Output<D, C, M> {
         assert_eq!(self.context_id, context.get_id(), "Context mismatch");
         if self.dirty.take_status() {
             let mut m = self.data.borrow_mut();
-            for (k, v) in self.inner.borrow_mut().get() {
+            self.inner.borrow_mut().foreach(|(k, v)| {
                 m.add(k, v);
-            }
+            })
         }
         self.data.borrow()
     }

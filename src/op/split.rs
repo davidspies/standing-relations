@@ -27,16 +27,17 @@ where
     C::T: Clone,
 {
     type T = C::T;
-    type I = vec::IntoIter<C::T>;
 
-    fn get(&mut self) -> Self::I {
+    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
         if self.inner.borrow().dirty.take_status() {
-            let data = self.inner.borrow_mut().inner.get().collect();
+            let data = self.inner.borrow_mut().inner.get_vec();
             for (sender, data) in self.inner.borrow().senders.iter().with_clones(data) {
                 sender.send_all(data)
             }
         }
-        self.receiver.receive().into_iter()
+        for x in self.receiver.receive() {
+            continuation(x)
+        }
     }
 }
 

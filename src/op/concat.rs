@@ -1,15 +1,13 @@
-use std::iter;
-
 use crate::{Op, Relation};
 
 pub struct Concat<C1: Op, C2: Op<T = C1::T>>(C1, C2);
 
 impl<C1: Op, C2: Op<T = C1::T>> Op for Concat<C1, C2> {
     type T = C1::T;
-    type I = iter::Chain<<C1::I as IntoIterator>::IntoIter, <C2::I as IntoIterator>::IntoIter>;
 
-    fn get(&mut self) -> Self::I {
-        self.0.get().chain(self.1.get())
+    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
+        self.0.foreach(&mut continuation);
+        self.1.foreach(continuation);
     }
 }
 

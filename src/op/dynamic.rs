@@ -1,29 +1,26 @@
-use std::marker::PhantomData;
-
 use crate::{Op, Relation};
 
-pub struct Dynamic<'a, T>(Box<dyn 'a + Op<T = T, I = Box<dyn 'a + Iterator<Item = T>>>>);
+pub struct Dynamic<'a, T>(Box<dyn DynOp<T = T> + 'a>);
 
-impl<'a, T> Op for Dynamic<'a, T> {
+impl<'b, T> Op for Dynamic<'b, T> {
     type T = T;
-    type I = Box<dyn 'a + Iterator<Item = T>>;
 
-    fn get(&mut self) -> Self::I {
-        self.0.get()
+    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, continuation: F) {
+        self.0.foreach(Box::new(continuation))
     }
 }
 
-struct BoxedIter<'a, C>(C, PhantomData<&'a ()>);
+trait DynOp {
+    type T;
 
-impl<'a, C: Op> Op for BoxedIter<'a, C>
-where
-    C::I: 'a,
-{
+    fn foreach<'a>(&'a mut self, continuation: Box<dyn FnMut(Self::T) + 'a>);
+}
+
+impl<C: Op> DynOp for C {
     type T = C::T;
-    type I = Box<dyn 'a + Iterator<Item = C::T>>;
 
-    fn get(&mut self) -> Self::I {
-        Box::new(self.0.get())
+    fn foreach<'a>(&'a mut self, continuation: Box<dyn FnMut(Self::T) + 'a>) {
+        Op::foreach(self, continuation)
     }
 }
 
@@ -35,7 +32,7 @@ impl<C: Op> Relation<C> {
         Relation {
             context_id: self.context_id,
             dirty: self.dirty,
-            inner: Dynamic(Box::new(BoxedIter(self.inner, PhantomData))),
+            inner: Dynamic(Box::new(self.inner)),
         }
     }
 }
