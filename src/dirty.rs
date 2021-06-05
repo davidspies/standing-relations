@@ -42,7 +42,7 @@ impl ReceiveBuilder {
             targets: vec![],
         }));
         for t in self.0 {
-            (*t).borrow_mut().add_target(Rc::clone(&result));
+            t.borrow_mut().add_target(Rc::clone(&result));
         }
         DirtyReceive(result)
     }
