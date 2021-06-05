@@ -4,6 +4,7 @@ pub mod dynamic;
 pub mod input;
 pub mod join;
 pub mod map;
+pub mod reduce;
 pub mod split;
 
 pub trait Op {
