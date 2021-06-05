@@ -1,6 +1,6 @@
 mod with_clones;
 
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, vec};
 
 use crate::{
     dirty::DirtyReceive,
@@ -27,15 +27,16 @@ where
     C::T: Clone,
 {
     type T = C::T;
+    type I = vec::IntoIter<C::T>;
 
-    fn get(&mut self) -> Vec<C::T> {
+    fn get(&mut self) -> Self::I {
         if self.inner.borrow().dirty.take_status() {
-            let data = self.inner.borrow_mut().inner.get();
+            let data = self.inner.borrow_mut().inner.get().collect();
             for (sender, data) in self.inner.borrow().senders.iter().with_clones(data) {
                 sender.send_all(data)
             }
         }
-        self.receiver.receive()
+        self.receiver.receive().into_iter()
     }
 }
 

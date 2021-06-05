@@ -5,6 +5,7 @@ pub mod split;
 
 pub trait Op {
     type T;
+    type I: Iterator<Item = Self::T>;
 
-    fn get(&mut self) -> Vec<Self::T>;
+    fn get(&mut self) -> Self::I;
 }

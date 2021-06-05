@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::{
     dirty::{self, DirtySend},
     pipes::{self, Receiver},
@@ -45,9 +47,10 @@ pub struct Input<T>(Receiver<T>);
 
 impl<T> Op for Input<T> {
     type T = T;
+    type I = vec::IntoIter<T>;
 
-    fn get(&mut self) -> Vec<T> {
-        self.0.receive()
+    fn get(&mut self) -> Self::I {
+        self.0.receive().into_iter()
     }
 }
 
