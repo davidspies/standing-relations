@@ -6,7 +6,9 @@ use crate::{Context, Output};
 fn it_works() {
     let mut context = Context::new();
     let (inp, rel) = context.new_input();
-    let outp: Output<_, _> = rel.get_output();
+    let splitted = rel.split();
+    let concatted = splitted.clone().concat(splitted);
+    let outp: Output<_, _> = concatted.get_output();
     inp.add('a');
     inp.add('b');
     inp.add('a');
@@ -16,6 +18,6 @@ fn it_works() {
     context.commit();
     assert_eq!(
         &*outp.get(&context),
-        &HashMap::from_iter(vec![('a', 2), ('b', 1)])
+        &HashMap::from_iter(vec![('a', 4), ('b', 2)])
     );
 }
