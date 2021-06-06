@@ -1,6 +1,7 @@
 #![feature(type_alias_impl_trait)]
 
 mod context;
+mod convenience;
 mod count_map;
 mod dirty;
 mod op;
