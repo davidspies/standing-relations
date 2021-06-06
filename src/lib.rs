@@ -1,4 +1,4 @@
-#![feature(type_alias_impl_trait)]
+#![feature(map_first_last, type_alias_impl_trait)]
 
 mod context;
 mod convenience;
