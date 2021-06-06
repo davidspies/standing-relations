@@ -1,15 +1,12 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    context::{HandlerPosition, HandlerQueue},
     dirty::{self, DirtySend},
     pipes::{self, Receiver},
     Context, Op, Relation,
 };
 
-pub trait IsInputHandler {
-    fn dump(&self);
-}
+use super::{handler_queue::IsInputHandler, HandlerPosition, HandlerQueue};
 
 struct InputHandler<T> {
     receiver: pipes::Receiver<T>,
