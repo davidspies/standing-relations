@@ -10,6 +10,7 @@ mod pipes;
 mod relation;
 
 pub use context::Context;
+pub use convenience::Collection;
 pub use count_map::{CountMap, Observable};
 pub use op::concat::Concat;
 pub use op::consolidate::Consolidate;
