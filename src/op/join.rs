@@ -110,7 +110,7 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<T = ((K, V1), isize)>> 
         }
     }
 
-    pub fn anti_join<C2: Op<T = (K, isize)>>(
+    pub fn antijoin<C2: Op<T = (K, isize)>>(
         self,
         other: Relation<C2>,
     ) -> Relation<AntiJoin<K, V1, C1, C2>> {
