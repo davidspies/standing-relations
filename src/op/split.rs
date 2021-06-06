@@ -13,12 +13,12 @@ use self::with_clones::WithClones;
 
 pub struct Split<C: Op> {
     inner: Rc<RefCell<SplitInner<C>>>,
-    receiver: Receiver<C::T>,
+    receiver: Receiver<Rc<Vec<C::T>>>,
 }
 
 struct SplitInner<C: Op> {
     inner: C,
-    senders: Vec<Sender<C::T>>,
+    senders: Vec<Sender<Rc<Vec<C::T>>>>,
     dirty: DirtyReceive,
 }
 
@@ -30,13 +30,15 @@ where
 
     fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
         if self.inner.borrow().dirty.take_status() {
-            let data = self.inner.borrow_mut().inner.get_vec();
+            let data = Rc::new(self.inner.borrow_mut().inner.get_vec());
             for (sender, data) in self.inner.borrow().senders.iter().with_clones(data) {
-                sender.send_all(data)
+                sender.send(data)
             }
         }
-        for x in self.receiver.receive() {
-            continuation(x)
+        for data in self.receiver.receive() {
+            for x in &*data {
+                continuation(x.clone())
+            }
         }
     }
 }
