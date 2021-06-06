@@ -1,4 +1,7 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::{
+    context::{HandlerPosition, HandlerQueue},
     dirty::{self, DirtySend},
     pipes::{self, Receiver},
     Context, Op, Relation,
@@ -21,23 +24,16 @@ impl<T> IsInputHandler for InputHandler<T> {
     }
 }
 
-pub struct InputSender<T>(pipes::Sender<T>);
-
-impl<T> InputSender<T> {
-    pub fn send(&self, x: T) {
-        self.0.send(x)
-    }
+pub struct InputSender<'a, T> {
+    sender: pipes::Sender<T>,
+    handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
+    self_index: HandlerPosition,
 }
 
-impl<D> InputSender<(D, isize)> {
-    pub fn update(&self, x: D, r: isize) {
-        self.send((x, r))
-    }
-    pub fn add(&self, x: D) {
-        self.update(x, 1)
-    }
-    pub fn remove(&self, x: D) {
-        self.update(x, -1)
+impl<T> InputSender<'_, T> {
+    pub fn send(&self, x: T) {
+        self.handler_queue.borrow_mut().enqueue(self.self_index);
+        self.sender.send(x)
     }
 }
 
@@ -54,7 +50,7 @@ impl<T> Op for Input<T> {
 }
 
 impl<'a> Context<'a> {
-    pub fn new_input<T: 'a>(&mut self) -> (InputSender<T>, Relation<Input<T>>) {
+    pub fn new_input<T: 'a>(&mut self) -> (InputSender<'a, T>, Relation<Input<T>>) {
         let (sender1, receiver1) = pipes::new();
         let (sender2, receiver2) = pipes::new();
         let (dirty_send, dirty_receive) = dirty::new();
@@ -63,12 +59,17 @@ impl<'a> Context<'a> {
             sender: sender2,
             dirty_send,
         };
-        self.add_handler(Box::new(handler));
-        let result = Relation {
+        let i = self.add_handler(handler);
+        let input_sender = InputSender {
+            sender: sender1,
+            handler_queue: Rc::clone(self.get_handler_queue()),
+            self_index: i,
+        };
+        let relation = Relation {
             context_id: self.get_id(),
             dirty: dirty_receive,
             inner: Input(receiver2),
         };
-        (InputSender(sender1), result)
+        (input_sender, relation)
     }
 }
