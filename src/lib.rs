@@ -16,7 +16,7 @@ pub use op::concat::Concat;
 pub use op::consolidate::Consolidate;
 pub use op::dynamic::Dynamic;
 pub use op::input::{Input, InputSender};
-pub use op::join::Join;
+pub use op::join::{AntiJoin, Join};
 pub use op::map::FlatMap;
 pub use op::reduce::Reduce;
 pub use op::split::Split;
