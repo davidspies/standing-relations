@@ -1,4 +1,5 @@
 #![feature(map_first_last, type_alias_impl_trait)]
+#![feature(label_break_value)]
 
 mod context;
 mod convenience;
