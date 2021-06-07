@@ -8,7 +8,7 @@ impl<T> Sender<T> {
     pub fn send(&self, data: T) {
         self.0.borrow_mut().push(data)
     }
-    pub fn send_all(&self, data: Vec<T>) {
+    pub fn send_all<I: IntoIterator<Item = T>>(&self, data: I) {
         self.0.borrow_mut().extend(data)
     }
 }

@@ -92,9 +92,7 @@ fn ttt_outcomes() {
             if known_positions.is_empty() {
                 break;
             }
-            for (&p, _) in known_positions.iter() {
-                position_inp.add(&context, p);
-            }
+            position_inp.add_all(&context, known_positions.iter().map(|(&p, _)| p));
         }
         context.commit();
     }
@@ -105,9 +103,7 @@ fn ttt_outcomes() {
             if known_outcomes.is_empty() {
                 break;
             }
-            for (&po, _) in known_outcomes.iter() {
-                outcome_inp.add(&context, po);
-            }
+            outcome_inp.add_all(&context, known_outcomes.iter().map(|(&po, _)| po));
         }
         context.commit();
     }

@@ -34,6 +34,11 @@ impl<T> InputSender<'_, T> {
         self.handler_queue.borrow_mut().enqueue(self.self_index);
         self.sender.send(x)
     }
+    pub fn send_all<I: IntoIterator<Item = T>>(&self, context: &ExecutionContext, data: I) {
+        assert_eq!(self.context_id, context.0.id, "Context mismatch");
+        self.handler_queue.borrow_mut().enqueue(self.self_index);
+        self.sender.send_all(data);
+    }
 }
 
 pub struct Input<T>(Receiver<T>);
