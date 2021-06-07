@@ -3,10 +3,10 @@ use std::{cell::RefCell, rc::Rc};
 use crate::{
     dirty::{self, DirtySend},
     pipes::{self, Receiver},
-    Context, Op, Relation,
+    CreationContext, ExecutionContext, Op, Relation,
 };
 
-use super::{handler_queue::IsInputHandler, HandlerPosition, HandlerQueue};
+use super::{handler_queue::IsInputHandler, ContextId, HandlerPosition, HandlerQueue};
 
 struct InputHandler<T> {
     receiver: pipes::Receiver<T>,
@@ -22,13 +22,15 @@ impl<T> IsInputHandler for InputHandler<T> {
 }
 
 pub struct InputSender<'a, T> {
+    context_id: ContextId,
     sender: pipes::Sender<T>,
     handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
     self_index: HandlerPosition,
 }
 
 impl<T> InputSender<'_, T> {
-    pub fn send(&self, x: T) {
+    pub fn send(&self, context: &ExecutionContext, x: T) {
+        assert_eq!(self.context_id, context.0.id, "Context mismatch");
         self.handler_queue.borrow_mut().enqueue(self.self_index);
         self.sender.send(x)
     }
@@ -46,8 +48,8 @@ impl<T> Op for Input<T> {
     }
 }
 
-impl<'a> Context<'a> {
-    pub fn new_input<T: 'a>(&mut self) -> (InputSender<'a, T>, Relation<Input<T>>) {
+impl<'a> CreationContext<'a> {
+    pub fn new_input<T: 'a>(&self) -> (InputSender<'a, T>, Relation<Input<T>>) {
         let (sender1, receiver1) = pipes::new();
         let (sender2, receiver2) = pipes::new();
         let (dirty_send, dirty_receive) = dirty::new();
@@ -56,14 +58,15 @@ impl<'a> Context<'a> {
             sender: sender2,
             dirty_send,
         };
-        let i = self.add_handler(handler);
+        let i = self.0.add_handler(handler);
         let input_sender = InputSender {
+            context_id: self.0.id,
             sender: sender1,
-            handler_queue: Rc::clone(self.get_handler_queue()),
+            handler_queue: Rc::clone(self.0.get_handler_queue()),
             self_index: i,
         };
         let relation = Relation {
-            context_id: self.get_id(),
+            context_id: self.0.id,
             dirty: dirty_receive,
             inner: Input(receiver2),
         };

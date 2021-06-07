@@ -52,7 +52,7 @@ impl<'a> HandlerQueue<'a> {
 }
 
 impl<'a> Context<'a> {
-    pub(super) fn add_handler<H: IsInputHandler + 'a>(&mut self, handler: H) -> HandlerPosition {
+    pub(super) fn add_handler<H: IsInputHandler + 'a>(&self, handler: H) -> HandlerPosition {
         self.handler_queue.borrow_mut().add_handler(handler)
     }
 }

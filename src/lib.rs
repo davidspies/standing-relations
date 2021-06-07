@@ -11,7 +11,7 @@ mod pipes;
 mod relation;
 
 pub use context::input::{Input, InputSender};
-pub use context::Context;
+pub use context::{CreationContext, ExecutionContext};
 pub use convenience::Collection;
 pub use count_map::{CountMap, Observable};
 pub use op::concat::Concat;

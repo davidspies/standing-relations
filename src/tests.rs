@@ -5,20 +5,22 @@ use std::{
     iter::FromIterator,
 };
 
-use crate::{Context, Output};
+use crate::{CreationContext, Output};
 
 #[test]
 fn it_works() {
-    let mut context = Context::new();
+    let context = CreationContext::new();
     let (inp, rel) = context.new_input();
     let splitted = rel.split();
     let concatted = splitted.clone().concat(splitted);
     let outp: Output<_, _> = concatted.get_output();
-    inp.add('a');
-    inp.add('b');
-    inp.add('a');
-    inp.add('b');
-    inp.remove('b');
+
+    let mut context = context.begin();
+    inp.add(&context, 'a');
+    inp.add(&context, 'b');
+    inp.add(&context, 'a');
+    inp.add(&context, 'b');
+    inp.remove(&context, 'b');
     assert_eq!(&*outp.get(&context), &HashMap::new());
     context.commit();
     assert_eq!(
@@ -37,7 +39,7 @@ fn ttt_outcomes_simple() {
 
 #[test]
 fn ttt_outcomes() {
-    let mut context = Context::new();
+    let context = CreationContext::new();
     let (position_inp, positions) = context.new_input();
     let positions = positions.split();
     let pos_children = positions
@@ -81,7 +83,8 @@ fn ttt_outcomes() {
 
     let output: Output<_, _> = outcomes.get_output();
 
-    position_inp.add(TTTPosition::start());
+    let mut context = context.begin();
+    position_inp.add(&context, TTTPosition::start());
     context.commit();
     loop {
         {
@@ -90,7 +93,7 @@ fn ttt_outcomes() {
                 break;
             }
             for (&p, _) in known_positions.iter() {
-                position_inp.add(p);
+                position_inp.add(&context, p);
             }
         }
         context.commit();
@@ -103,7 +106,7 @@ fn ttt_outcomes() {
                 break;
             }
             for (&po, _) in known_outcomes.iter() {
-                outcome_inp.add(po);
+                outcome_inp.add(&context, po);
             }
         }
         context.commit();

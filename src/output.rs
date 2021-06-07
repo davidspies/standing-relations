@@ -3,7 +3,7 @@ use std::{
     collections::HashMap,
 };
 
-use crate::{context::ContextId, dirty::DirtyReceive, Context, CountMap, Op, Relation};
+use crate::{context::ContextId, dirty::DirtyReceive, CountMap, ExecutionContext, Op, Relation};
 
 impl<D, C: Op<T = (D, isize)>> Relation<C> {
     pub fn get_output<M: CountMap<D>>(self) -> Output<D, C, M> {
@@ -24,7 +24,7 @@ pub struct Output<D, C: Op<T = (D, isize)>, M: CountMap<D> = HashMap<D, isize>> 
 }
 
 impl<D, C: Op<T = (D, isize)>, M: CountMap<D>> Output<D, C, M> {
-    pub fn get<'a>(&'a self, context: &'a Context<'_>) -> Ref<'a, M> {
+    pub fn get<'a>(&'a self, context: &'a ExecutionContext<'_>) -> Ref<'a, M> {
         assert_eq!(self.context_id, context.get_id(), "Context mismatch");
         if self.dirty.take_status() {
             let mut m = self.data.borrow_mut();
