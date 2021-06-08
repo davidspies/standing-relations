@@ -1,5 +1,3 @@
-mod with_clones;
-
 use std::{cell::RefCell, rc::Rc, vec};
 
 use crate::{
@@ -8,8 +6,6 @@ use crate::{
     pipes::{self, Receiver, Sender},
     relation::Relation,
 };
-
-use self::with_clones::WithClones;
 
 pub struct Split<C: Op> {
     inner: Rc<RefCell<SplitInner<C>>>,
@@ -31,8 +27,8 @@ where
     fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
         if self.inner.borrow().dirty.take_status() {
             let data = Rc::new(self.inner.borrow_mut().inner.get_vec());
-            for (sender, data) in self.inner.borrow().senders.iter().with_clones(data) {
-                sender.send(data)
+            for sender in &self.inner.borrow().senders {
+                sender.send(Rc::clone(&data))
             }
         }
         for data in self.receiver.receive() {
