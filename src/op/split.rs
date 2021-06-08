@@ -44,7 +44,7 @@ impl<T, C: Op<T = Either<L, R>>, L, R> Op for Split<T, C, L, R> {
 }
 
 impl<C: Op<T = Either<L, R>>, L, R> Relation<C> {
-    pub fn split(self) -> (Relation<Split<L, C, L, R>>, Relation<Split<R, C, L, R>>) {
+    pub fn split_(self) -> (Relation<Split<L, C, L, R>>, Relation<Split<R, C, L, R>>) {
         let mut this_dirty = self.dirty.to_receive();
         let left_dirty = this_dirty.add_target();
         let right_dirty = this_dirty.add_target();

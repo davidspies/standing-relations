@@ -1,5 +1,7 @@
 use std::{cmp::Ordering, hash::Hash};
 
+use crate::Either;
+
 pub trait IsGame {
     type Position: IsPosition<Player = Self::Player, Outcome = Self::Outcome>;
     type Player: IsPlayer<Outcome = Self::Outcome>;
@@ -15,9 +17,7 @@ pub trait IsPosition: Clone + Eq + Hash {
 
     fn get_turn(&self) -> Self::Player;
 
-    fn is_ended(&self) -> Option<Self::Outcome>;
-
-    fn moves(&self) -> Self::MoveIter;
+    fn status(&self) -> Either<Self::MoveIter, Self::Outcome>;
 }
 
 pub trait IsPlayer {

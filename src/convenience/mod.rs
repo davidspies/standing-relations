@@ -5,6 +5,7 @@ mod input;
 mod join;
 mod map;
 mod reduce;
+mod split;
 
 pub type Collection<'a, D> = Relation<Save<Dynamic<'a, (D, isize)>>>;
 

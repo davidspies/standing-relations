@@ -2,6 +2,12 @@ use std::{iter, ops::Neg};
 
 use crate::{Op, Relation};
 
+impl<C: Op> Relation<C> {
+    pub fn map_<Y, F: Fn(C::T) -> Y>(self, f: F) -> Relation<impl Op<T = Y>> {
+        self.flat_map_(move |x| iter::once(f(x)))
+    }
+}
+
 impl<D, C: Op<T = (D, isize)>> Relation<C> {
     pub fn flat_map<I: IntoIterator, F: Fn(D) -> I>(
         self,

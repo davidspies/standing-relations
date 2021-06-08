@@ -6,6 +6,8 @@ use std::{
     fmt::{self, Debug, Formatter},
 };
 
+use crate::Either;
+
 use super::game::{IsGame, IsOutcome, IsPlayer, IsPosition};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -114,38 +116,28 @@ impl IsPosition for Position {
         self.turn
     }
 
-    fn is_ended(&self) -> Option<Self::Outcome> {
+    fn status(&self) -> Either<Self::MoveIter, Self::Outcome> {
         if let Some(p) = self.has_line() {
-            return Some(p.win());
+            return Either::Right(p.win());
         }
-        for row in 0..3 {
-            for col in 0..3 {
-                if self.board[row][col] == Piece::E {
-                    return None;
-                }
-            }
-        }
-        Some(Outcome::Draw)
-    }
-
-    fn moves(&self) -> Self::MoveIter {
-        if self.has_line().is_some() {
-            return Vec::new();
-        }
-        let mut result = Vec::new();
+        let mut moves = Vec::new();
         for row in 0..3 {
             for col in 0..3 {
                 if self.board[row][col] == Piece::E {
                     let mut new_board = self.board.clone();
                     new_board[row][col] = self.turn.piece();
-                    result.push(Position {
+                    moves.push(Position {
                         board: new_board,
                         turn: self.turn.opponent(),
                     })
                 }
             }
         }
-        result
+        if moves.is_empty() {
+            Either::Right(Outcome::Draw)
+        } else {
+            Either::Left(moves)
+        }
     }
 }
 

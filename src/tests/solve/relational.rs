@@ -6,16 +6,22 @@ use crate::{
         solve::non_loopy,
         ttt::TTT,
     },
-    CreationContext, Output,
+    CreationContext, Either, Output,
 };
 
 fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
     let context = CreationContext::new();
     let (position_inp, positions) = context.new_input();
     let positions = positions.save();
-    let pos_children = positions
+    let (pos_child_vec, immediate) = positions
         .clone()
-        .flat_map(|p: Game::Position| p.moves().into_iter().map(move |c| (p.clone(), c)))
+        .map(|p: Game::Position| match p.status() {
+            Either::Left(moves) => Either::Left((p, moves)),
+            Either::Right(outcome) => Either::Right((p, outcome)),
+        })
+        .split();
+    let pos_children = pos_child_vec
+        .flat_map(|(p, children)| children.into_iter().map(move |c| (p.clone(), c)))
         .save();
     let next_positions: Output<Game::Position, _> = pos_children
         .clone()
@@ -29,16 +35,10 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
         .clone()
         .concat(
             positions
-                .clone()
                 .minus(non_draw_outcomes.map(|(p, _)| p))
                 .map(|p| (p, IsOutcome::draw())),
         )
         .save();
-
-    let immediate = positions.flat_map(|p: Game::Position| {
-        let outcome = p.is_ended()?;
-        Some((p, outcome))
-    });
 
     let child_outcomes = pos_children
         .map(|(p, c)| (c, p))

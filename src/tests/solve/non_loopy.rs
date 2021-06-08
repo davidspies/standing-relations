@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
-use crate::tests::{
-    game::{IsGame, IsPlayer, IsPosition},
-    ttt::{self, TTT},
+use crate::{
+    tests::{
+        game::{IsGame, IsPlayer, IsPosition},
+        ttt::{self, TTT},
+    },
+    Either,
 };
 
 pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
@@ -15,13 +18,12 @@ fn solve_to<P: IsPosition>(this: P, known: &mut HashMap<P, P::Outcome>) -> P::Ou
     if let Some(outcome) = known.get(&this) {
         return outcome.clone();
     }
-    if let Some(outcome) = this.is_ended() {
-        known.insert(this, outcome.clone());
-        return outcome;
-    }
-    let outcome = this
-        .get_turn()
-        .best_outcome(this.moves().into_iter().map(|child| solve_to(child, known)));
+    let outcome = match this.status() {
+        Either::Left(moves) => this
+            .get_turn()
+            .best_outcome(moves.into_iter().map(|child| solve_to(child, known))),
+        Either::Right(outcome) => outcome,
+    };
     known.insert(this, outcome.clone());
     outcome
 }
