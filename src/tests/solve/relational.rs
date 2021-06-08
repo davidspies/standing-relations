@@ -6,13 +6,14 @@ use crate::{
         solve::non_loopy,
         ttt::TTT,
     },
-    CreationContext,
+    FeedbackContext,
 };
 
 fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
-    let context = CreationContext::new();
-    let (position_inp, positions) = context.new_input();
-    let positions = positions.save();
+    let mut context = FeedbackContext::new();
+    let (start_inp, start_position) = context.new_input();
+    let (position_inp, non_start_positions) = context.new_input();
+    let positions = start_position.concat(non_start_positions).distinct().save();
     let (pos_child_vec, immediate) = positions
         .clone()
         .map(|p: Game::Position| {
@@ -28,6 +29,8 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
         .map(|(_, c)| c)
         .set_minus(positions.clone())
         .get_output();
+
+    context.feed(next_positions, position_inp);
 
     let (outcome_inp, non_draw_outcomes) = context.new_input();
     let non_draw_outcomes = non_draw_outcomes.save();
@@ -53,30 +56,12 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
 
     let output = outcomes.get_output();
 
-    let mut context = context.begin();
-    position_inp.add(&context, g.start());
-    context.commit();
-    loop {
-        {
-            let known_positions = next_positions.get(&context);
-            if known_positions.is_empty() {
-                break;
-            }
-            position_inp.add_all(&context, known_positions.iter().map(|(p, _)| p.clone()));
-        }
-        context.commit();
-    }
+    context.feed(new_outcomes, outcome_inp);
 
-    loop {
-        {
-            let known_outcomes = new_outcomes.get(&context);
-            if known_outcomes.is_empty() {
-                break;
-            }
-            outcome_inp.add_all(&context, known_outcomes.iter().map(|(po, _)| po.clone()));
-        }
-        context.commit();
-    }
+    let mut context = context.begin();
+    start_inp.add(&context, g.start());
+
+    context.commit();
 
     let result = output.get(&context).keys().map(Clone::clone).collect();
     result
