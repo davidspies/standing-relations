@@ -6,7 +6,7 @@ use std::{
 use crate::{context::ContextId, dirty::DirtyReceive, CountMap, ExecutionContext, Op, Relation};
 
 impl<D, C: Op<T = (D, isize)>> Relation<C> {
-    pub fn get_output<M: CountMap<D>>(self) -> Output<D, C, M> {
+    pub fn get_output_<M: CountMap<D>>(self) -> Output<D, C, M> {
         Output {
             context_id: self.context_id,
             dirty: self.dirty.to_receive(),

@@ -4,6 +4,7 @@ mod concat;
 mod input;
 mod join;
 mod map;
+mod output;
 mod reduce;
 mod split;
 

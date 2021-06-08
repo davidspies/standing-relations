@@ -71,7 +71,7 @@ impl<
 }
 
 impl<C: Op<T = ((K, X), isize)>, K: Eq + Hash + Clone, X> Relation<C> {
-    pub fn reduce<M: CountMap<X> + Observable, Y: Clone + Eq, F: Fn(&K, &M) -> Y>(
+    pub fn reduce_<M: CountMap<X> + Observable, Y: Clone + Eq, F: Fn(&K, &M) -> Y>(
         self,
         f: F,
     ) -> Relation<Reduce<K, X, C, M, Y, F>> {

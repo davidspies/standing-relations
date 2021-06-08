@@ -6,7 +6,7 @@ use crate::{
         solve::non_loopy,
         ttt::TTT,
     },
-    CreationContext, Output,
+    CreationContext,
 };
 
 fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
@@ -23,7 +23,7 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
     let pos_children = pos_child_vec
         .flat_map(|(p, children)| children.into_iter().map(move |c| (p.clone(), c)))
         .save();
-    let next_positions: Output<Game::Position, _> = pos_children
+    let next_positions = pos_children
         .clone()
         .map(|(_, c)| c)
         .set_minus(positions.clone())
@@ -45,16 +45,13 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
         .join(outcomes.clone())
         .map(|(_, p, o)| (p, o));
 
-    let next_outcomes = immediate.concat(child_outcomes.reduce(
-        |p: &Game::Position, outs: &HashMap<_, _>| {
-            p.get_turn().best_outcome(outs.keys().map(Clone::clone))
-        },
-    ));
+    let next_outcomes = immediate.concat(child_outcomes.reduce(|p: &Game::Position, outs| {
+        p.get_turn().best_outcome(outs.keys().map(Clone::clone))
+    }));
 
-    let new_outcomes: Output<(Game::Position, Game::Outcome), _> =
-        next_outcomes.set_minus(outcomes.clone()).get_output();
+    let new_outcomes = next_outcomes.set_minus(outcomes.clone()).get_output();
 
-    let output: Output<_, _> = outcomes.get_output();
+    let output = outcomes.get_output();
 
     let mut context = context.begin();
     position_inp.add(&context, g.start());
