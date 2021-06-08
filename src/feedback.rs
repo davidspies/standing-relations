@@ -1,9 +1,19 @@
+mod checked_foreach;
+mod pipe;
+
 use std::{collections::HashMap, hash::Hash, ops::Deref};
 
-use crate::{CreationContext, ExecutionContext, InputSender, Op, Output};
+use crate::{CreationContext, ExecutionContext, InputSender, Op, Output, Relation};
+
+use self::{checked_foreach::CheckedForeach, pipe::Pipe};
 
 pub struct Feedback<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
     output: Output<D, C>,
+    input: InputSender<'a, C::T>,
+}
+
+pub struct FeedbackPipe<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
+    output: Output<D, C, Pipe<(D, isize)>>,
     input: InputSender<'a, C::T>,
 }
 
@@ -37,6 +47,20 @@ impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for Feedback<
                 self.input.update(context, x.clone(), count);
             }
             Instruct::Changed
+        }
+    }
+}
+
+impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for FeedbackPipe<'_, C, D> {
+    fn feed(&self, context: &ExecutionContext) -> Instruct<I> {
+        let m = self.output.get(context);
+        if m.take()
+            .into_iter()
+            .checked_foreach(|(x, count)| self.input.update(context, x, count))
+        {
+            Instruct::Changed
+        } else {
+            Instruct::Unchanged
         }
     }
 }
@@ -91,10 +115,23 @@ impl<'a, I> FeedbackContext<'a, I, CreationContext<'a>> {
     }
     pub fn feed<C: Op<T = (D, isize)> + 'a, D: Clone + Eq + Hash + 'a>(
         &mut self,
-        output: Output<D, C>,
+        rel: Relation<C>,
         input: InputSender<'a, (D, isize)>,
     ) {
-        self.feeders.push(Box::new(Feedback { output, input }))
+        self.feeders.push(Box::new(Feedback {
+            output: rel.get_output(),
+            input,
+        }))
+    }
+    pub fn feed_pipe<C: Op<T = (D, isize)> + 'a, D: Clone + Eq + Hash + 'a>(
+        &mut self,
+        rel: Relation<C>,
+        input: InputSender<'a, (D, isize)>,
+    ) {
+        self.feeders.push(Box::new(FeedbackPipe {
+            output: rel.get_output_(),
+            input,
+        }))
     }
 }
 

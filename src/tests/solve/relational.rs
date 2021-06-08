@@ -24,13 +24,9 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
     let pos_children = pos_child_vec
         .flat_map(|(p, children)| children.into_iter().map(move |c| (p.clone(), c)))
         .save();
-    let next_positions = pos_children
-        .clone()
-        .map(|(_, c)| c)
-        .set_minus(positions.clone())
-        .get_output();
+    let next_positions = pos_children.clone().map(|(_, c)| c);
 
-    context.feed(next_positions, position_inp);
+    context.feed_pipe(next_positions, position_inp);
 
     let (outcome_inp, non_draw_outcomes) = context.new_input();
     let non_draw_outcomes = non_draw_outcomes.save();
@@ -52,11 +48,9 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
         p.get_turn().best_outcome(outs.keys().map(Clone::clone))
     }));
 
-    let new_outcomes = next_outcomes.set_minus(outcomes.clone()).get_output();
-
     let output = outcomes.get_output();
 
-    context.feed(new_outcomes, outcome_inp);
+    context.feed_pipe(next_outcomes, outcome_inp);
 
     let mut context = context.begin();
     start_inp.add(&context, g.start());

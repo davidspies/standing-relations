@@ -1,12 +1,12 @@
 use crate::{Dynamic, Op, Relation, Save};
 
-mod concat;
-mod input;
-mod join;
-mod map;
-mod output;
-mod reduce;
-mod split;
+pub mod concat;
+pub mod input;
+pub mod join;
+pub mod map;
+pub mod output;
+pub mod reduce;
+pub mod split;
 
 pub type Collection<'a, D> = Relation<Save<Dynamic<'a, (D, isize)>>>;
 
