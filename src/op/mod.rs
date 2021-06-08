@@ -4,7 +4,7 @@ pub mod dynamic;
 pub mod join;
 pub mod map;
 pub mod reduce;
-pub mod split;
+pub mod save;
 
 pub trait Op {
     type T;

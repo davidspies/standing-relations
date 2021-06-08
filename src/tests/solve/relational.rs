@@ -12,11 +12,11 @@ use crate::{
 fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
     let context = CreationContext::new();
     let (position_inp, positions) = context.new_input();
-    let positions = positions.split();
+    let positions = positions.save();
     let pos_children = positions
         .clone()
         .flat_map(|p: Game::Position| p.moves().into_iter().map(move |c| (p.clone(), c)))
-        .split();
+        .save();
     let next_positions: Output<Game::Position, _> = pos_children
         .clone()
         .map(|(_, c)| c)
@@ -24,7 +24,7 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
         .get_output();
 
     let (outcome_inp, non_draw_outcomes) = context.new_input();
-    let non_draw_outcomes = non_draw_outcomes.split();
+    let non_draw_outcomes = non_draw_outcomes.save();
     let outcomes = non_draw_outcomes
         .clone()
         .concat(
@@ -33,7 +33,7 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
                 .minus(non_draw_outcomes.map(|(p, _)| p))
                 .map(|p| (p, IsOutcome::draw())),
         )
-        .split();
+        .save();
 
     let immediate = positions.flat_map(|p: Game::Position| {
         let outcome = p.is_ended()?;

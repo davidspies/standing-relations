@@ -7,18 +7,18 @@ use crate::{
     relation::Relation,
 };
 
-pub struct Split<C: Op> {
-    inner: Rc<RefCell<SplitInner<C>>>,
+pub struct Save<C: Op> {
+    inner: Rc<RefCell<SaveInner<C>>>,
     receiver: Receiver<Rc<Vec<C::T>>>,
 }
 
-struct SplitInner<C: Op> {
+struct SaveInner<C: Op> {
     inner: C,
     senders: Vec<Sender<Rc<Vec<C::T>>>>,
     dirty: DirtyReceive,
 }
 
-impl<C: Op> Op for Split<C>
+impl<C: Op> Op for Save<C>
 where
     C::T: Clone,
 {
@@ -40,7 +40,7 @@ where
 }
 
 impl<C: Op> Relation<C> {
-    pub fn split(self) -> Relation<Split<C>>
+    pub fn save(self) -> Relation<Save<C>>
     where
         C::T: Clone,
     {
@@ -50,8 +50,8 @@ impl<C: Op> Relation<C> {
         Relation {
             context_id: self.context_id,
             dirty,
-            inner: Split {
-                inner: Rc::new(RefCell::new(SplitInner {
+            inner: Save {
+                inner: Rc::new(RefCell::new(SaveInner {
                     inner: self.inner,
                     senders: vec![sender],
                     dirty: this_dirty,
@@ -62,7 +62,7 @@ impl<C: Op> Relation<C> {
     }
 }
 
-impl<C: Op> Clone for Relation<Split<C>>
+impl<C: Op> Clone for Relation<Save<C>>
 where
     C::T: Clone,
 {
@@ -74,7 +74,7 @@ where
         Relation {
             context_id: self.context_id,
             dirty,
-            inner: Split {
+            inner: Save {
                 inner: Rc::clone(&self.inner.inner),
                 receiver,
             },

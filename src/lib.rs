@@ -21,7 +21,7 @@ pub use op::dynamic::Dynamic;
 pub use op::join::{AntiJoin, Join};
 pub use op::map::FlatMap;
 pub use op::reduce::Reduce;
-pub use op::split::Split;
+pub use op::save::Save;
 pub use op::Op;
 pub use output::Output;
 pub use relation::Relation;

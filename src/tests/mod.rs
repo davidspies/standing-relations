@@ -10,8 +10,8 @@ mod ttt;
 fn it_works() {
     let context = CreationContext::new();
     let (inp, rel) = context.new_input();
-    let splitted = rel.split();
-    let concatted = splitted.clone().concat(splitted);
+    let rel = rel.save();
+    let concatted = rel.clone().concat(rel);
     let outp: Output<_, _> = concatted.get_output();
 
     let mut context = context.begin();
