@@ -2,6 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     dirty::{self, DirtySend},
+    flat_iter::IntoFlatIterator,
     pipes::{self, Receiver},
     CreationContext, ExecutionContext, Op, Relation,
 };
@@ -10,13 +11,13 @@ use super::{handler_queue::IsInputHandler, ContextId, HandlerPosition, HandlerQu
 
 struct InputHandler<T> {
     receiver: pipes::Receiver<T>,
-    sender: pipes::Sender<T>,
+    sender: pipes::Sender<Vec<T>>,
     dirty_send: DirtySend,
 }
 
 impl<T> IsInputHandler for InputHandler<T> {
     fn dump(&self) {
-        self.sender.send_all(self.receiver.receive());
+        self.sender.send(self.receiver.receive());
         self.dirty_send.set_dirty();
     }
 }
@@ -41,13 +42,13 @@ impl<T> InputSender<'_, T> {
     }
 }
 
-pub struct Input<T>(Receiver<T>);
+pub struct Input<T>(Receiver<Vec<T>>);
 
 impl<T> Op for Input<T> {
     type T = T;
 
     fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
-        for x in self.0.receive() {
+        for x in self.0.receive().into_flat_iter() {
             continuation(x)
         }
     }

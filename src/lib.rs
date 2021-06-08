@@ -5,6 +5,7 @@ mod context;
 mod convenience;
 mod count_map;
 mod dirty;
+mod flat_iter;
 mod op;
 mod output;
 mod pipes;

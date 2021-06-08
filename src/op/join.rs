@@ -1,10 +1,6 @@
-mod flat_iter;
-
 use std::{collections::HashMap, hash::Hash};
 
-use crate::{CountMap, Op, Relation};
-
-use self::flat_iter::IntoFlatIterator;
+use crate::{flat_iter::IntoFlatIterator, CountMap, Op, Relation};
 
 pub struct Join<K, V1, V2, C1: Op<T = ((K, V1), isize)>, C2: Op<T = ((K, V2), isize)>> {
     left: C1,
