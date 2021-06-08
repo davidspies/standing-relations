@@ -5,6 +5,7 @@ pub mod join;
 pub mod map;
 pub mod reduce;
 pub mod save;
+pub mod split;
 
 pub trait Op {
     type T;
