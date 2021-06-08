@@ -6,7 +6,7 @@ use crate::{
         solve::non_loopy,
         ttt::TTT,
     },
-    CreationContext, Either, Output,
+    CreationContext, Output,
 };
 
 fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
@@ -15,11 +15,11 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
     let positions = positions.save();
     let (pos_child_vec, immediate) = positions
         .clone()
-        .map(|p: Game::Position| match p.status() {
-            Either::Left(moves) => Either::Left((p, moves)),
-            Either::Right(outcome) => Either::Right((p, outcome)),
+        .map(|p: Game::Position| {
+            let s = p.status();
+            (p, s)
         })
-        .split();
+        .split_by_value();
     let pos_children = pos_child_vec
         .flat_map(|(p, children)| children.into_iter().map(move |c| (p.clone(), c)))
         .save();
