@@ -1,6 +1,6 @@
-use crate::{ExecutionContext, InputSender};
+use crate::{ExecutionContext, Input};
 
-impl<D> InputSender<'_, (D, isize)> {
+impl<D> Input<'_, (D, isize)> {
     pub fn update(&self, context: &ExecutionContext, x: D, r: isize) {
         self.send(context, (x, r))
     }

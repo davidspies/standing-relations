@@ -12,7 +12,7 @@ mod pipes;
 mod relation;
 
 pub use context::{
-    input::{Input, InputSender},
+    input::{Input, InputOp},
     CreationContext, ExecutionContext,
 };
 pub use convenience::Collection;

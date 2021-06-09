@@ -3,18 +3,18 @@ pub mod pipe;
 
 use std::{collections::HashMap, hash::Hash, ops::Deref};
 
-use crate::{CreationContext, ExecutionContext, InputSender, Op, Output, Relation};
+use crate::{CreationContext, ExecutionContext, Input, Op, Output, Relation};
 
 use self::{checked_foreach::CheckedForeach, pipe::Pipe};
 
 pub struct Feedback<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
     output: Output<D, C>,
-    input: InputSender<'a, C::T>,
+    input: Input<'a, C::T>,
 }
 
 pub struct FeedbackPipe<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
     output: Output<D, C, Pipe<(D, isize)>>,
-    input: InputSender<'a, C::T>,
+    input: Input<'a, C::T>,
 }
 
 pub struct Interrupter<C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, isize>) -> I, I> {
@@ -116,7 +116,7 @@ impl<'a, I> FeedbackContext<'a, I, CreationContext<'a>> {
     pub fn feed<C: Op<T = (D, isize)> + 'a, D: Clone + Eq + Hash + 'a>(
         &mut self,
         rel: Relation<C>,
-        input: InputSender<'a, (D, isize)>,
+        input: Input<'a, (D, isize)>,
     ) {
         self.feeders.push(Box::new(Feedback {
             output: rel.get_output(),
@@ -126,7 +126,7 @@ impl<'a, I> FeedbackContext<'a, I, CreationContext<'a>> {
     pub fn feed_once<C: Op<T = (D, isize)> + 'a, D: Clone + Eq + Hash + 'a>(
         &mut self,
         rel: Relation<C>,
-        input: InputSender<'a, (D, isize)>,
+        input: Input<'a, (D, isize)>,
     ) {
         self.feeders.push(Box::new(FeedbackPipe {
             output: rel.get_output_(),
