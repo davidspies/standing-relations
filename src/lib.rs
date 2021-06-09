@@ -17,7 +17,7 @@ pub use context::{
 };
 pub use convenience::Collection;
 pub use count_map::{CountMap, Observable};
-pub use feedback::{pipe::Pipe, Feedback, FeedbackContext, Interrupter};
+pub use feedback::{Feedback, FeedbackContext, Interrupter};
 pub use op::{
     concat::Concat,
     consolidate::Consolidate,

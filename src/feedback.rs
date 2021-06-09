@@ -1,5 +1,5 @@
 mod checked_foreach;
-pub mod pipe;
+mod pipe;
 
 use self::{checked_foreach::CheckedForeach, pipe::Pipe};
 use crate::{CreationContext, ExecutionContext, Input, Op, Output, Relation};
@@ -10,7 +10,7 @@ pub struct Feedback<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
     input: Input<'a, C::T>,
 }
 
-pub struct FeedbackPipe<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
+pub struct FeedbackOnce<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
     output: Output<D, C, Pipe<(D, isize)>>,
     input: Input<'a, C::T>,
 }
@@ -49,7 +49,7 @@ impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for Feedback<
     }
 }
 
-impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for FeedbackPipe<'_, C, D> {
+impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for FeedbackOnce<'_, C, D> {
     fn feed(&self, context: &ExecutionContext) -> Instruct<I> {
         let m = self.output.get(context);
         if m.receive()
@@ -126,7 +126,7 @@ impl<'a, I> FeedbackContext<'a, I, CreationContext<'a>> {
         rel: Relation<C>,
         input: Input<'a, (D, isize)>,
     ) {
-        self.feeders.push(Box::new(FeedbackPipe {
+        self.feeders.push(Box::new(FeedbackOnce {
             output: rel.get_output_(),
             input,
         }))
