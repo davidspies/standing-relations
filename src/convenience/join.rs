@@ -1,6 +1,5 @@
-use std::hash::Hash;
-
 use crate::{Op, Relation};
+use std::hash::Hash;
 
 impl<K: Clone + Eq + Hash, V: Clone + Eq + Hash, C: Op<T = ((K, V), isize)>> Relation<C> {
     pub fn semijoin<C2: Op<T = (K, isize)>>(

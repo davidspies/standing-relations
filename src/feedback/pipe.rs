@@ -1,6 +1,5 @@
-use std::{cell::RefCell, mem};
-
 use crate::CountMap;
+use std::{cell::RefCell, mem};
 
 pub struct Pipe<T>(RefCell<Vec<T>>);
 

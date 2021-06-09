@@ -1,6 +1,5 @@
-use std::{collections::HashMap, hash::Hash};
-
 use crate::{CountMap, Op, Relation};
+use std::{collections::HashMap, hash::Hash};
 
 pub struct Consolidate<C: Op>(C);
 

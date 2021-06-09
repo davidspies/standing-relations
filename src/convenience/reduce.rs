@@ -1,9 +1,8 @@
+use crate::{Op, Reduce, Relation};
 use std::{
     collections::{BTreeMap, HashMap},
     hash::Hash,
 };
-
-use crate::{Op, Reduce, Relation};
 
 impl<D: Clone + Eq + Hash, C: Op<T = (D, isize)>> Relation<C> {
     pub fn distinct(self) -> Relation<impl Op<T = (D, isize)>> {

@@ -1,6 +1,5 @@
-use std::mem;
-
 use super::Context;
+use std::mem;
 
 pub type HandlerPosition = usize;
 

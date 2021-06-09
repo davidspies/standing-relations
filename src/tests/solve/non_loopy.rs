@@ -1,12 +1,11 @@
-use std::collections::HashMap;
-
 use crate::{
     tests::{
-        game::{IsGame, IsPlayer, IsPosition},
+        game::{IsGame, IsOutcome, IsPlayer, IsPosition},
         ttt::{self, TTT},
     },
     Either,
 };
+use std::collections::HashMap;
 
 pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
     let mut result = HashMap::new();
@@ -21,7 +20,8 @@ fn solve_to<P: IsPosition>(this: P, known: &mut HashMap<P, P::Outcome>) -> P::Ou
     let outcome = match this.status() {
         Either::Left(moves) => this
             .get_turn()
-            .best_outcome(moves.into_iter().map(|child| solve_to(child, known))),
+            .best_outcome(moves.into_iter().map(|child| solve_to(child, known)))
+            .backup(),
         Either::Right(outcome) => outcome,
     };
     known.insert(this, outcome.clone());
@@ -41,6 +41,6 @@ fn ttt_outcomes() {
     );
     assert_eq!(
         m[&ttt::Position::from_string("-O--X----")],
-        ttt::Outcome::XWin
+        ttt::Outcome::XWin(5),
     );
 }

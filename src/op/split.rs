@@ -1,10 +1,9 @@
-use std::{cell::RefCell, rc::Rc};
-
 use crate::{
     dirty::DirtyReceive,
     pipes::{self, Receiver, Sender},
     Op, Relation,
 };
+use std::{cell::RefCell, rc::Rc};
 
 pub enum Either<L, R> {
     Left(L),

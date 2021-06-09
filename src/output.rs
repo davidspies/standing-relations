@@ -1,9 +1,8 @@
+use crate::{context::ContextId, dirty::DirtyReceive, CountMap, ExecutionContext, Op, Relation};
 use std::{
     cell::{Ref, RefCell},
     collections::HashMap,
 };
-
-use crate::{context::ContextId, dirty::DirtyReceive, CountMap, ExecutionContext, Op, Relation};
 
 impl<D, C: Op<T = (D, isize)>> Relation<C> {
     pub fn get_output_<M: CountMap<D>>(self) -> Output<D, C, M> {

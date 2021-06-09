@@ -1,6 +1,5 @@
-use std::{iter, ops::Neg};
-
 use crate::{Op, Relation};
+use std::{iter, ops::Neg};
 
 impl<C: Op> Relation<C> {
     pub fn map_<Y, F: Fn(C::T) -> Y>(self, f: F) -> Relation<impl Op<T = Y>> {

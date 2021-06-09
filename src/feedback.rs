@@ -1,11 +1,9 @@
 mod checked_foreach;
 pub mod pipe;
 
-use std::{collections::HashMap, hash::Hash, ops::Deref};
-
-use crate::{CreationContext, ExecutionContext, Input, Op, Output, Relation};
-
 use self::{checked_foreach::CheckedForeach, pipe::Pipe};
+use crate::{CreationContext, ExecutionContext, Input, Op, Output, Relation};
+use std::{collections::HashMap, hash::Hash, ops::Deref};
 
 pub struct Feedback<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
     output: Output<D, C>,

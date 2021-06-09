@@ -2,9 +2,8 @@ mod global_id;
 mod handler_queue;
 pub mod input;
 
-use std::{cell::RefCell, rc::Rc};
-
 use self::handler_queue::{HandlerPosition, HandlerQueue};
+use std::{cell::RefCell, rc::Rc};
 
 pub(crate) type ContextId = usize;
 

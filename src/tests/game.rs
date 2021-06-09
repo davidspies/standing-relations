@@ -44,4 +44,5 @@ pub trait IsPlayer {
 
 pub trait IsOutcome: Clone + Eq + Hash {
     fn draw() -> Self;
+    fn backup(self) -> Self;
 }

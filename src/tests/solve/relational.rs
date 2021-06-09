@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     tests::{
         game::{IsGame, IsOutcome, IsPlayer, IsPosition},
@@ -8,6 +6,7 @@ use crate::{
     },
     FeedbackContext,
 };
+use std::collections::HashMap;
 
 fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
     let mut context = FeedbackContext::new();
@@ -45,7 +44,9 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
         .map(|(_, p, o)| (p, o));
 
     let next_outcomes = immediate.concat(child_outcomes.reduce(|p: &Game::Position, outs| {
-        p.get_turn().best_outcome(outs.keys().map(Clone::clone))
+        p.get_turn()
+            .best_outcome(outs.keys().map(Clone::clone))
+            .backup()
     }));
 
     let output = outcomes.get_output();

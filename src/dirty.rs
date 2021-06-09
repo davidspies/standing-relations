@@ -1,8 +1,7 @@
 mod rc_collection;
 
-use std::{cell::RefCell, rc::Rc};
-
 use self::rc_collection::RcCollection;
+use std::{cell::RefCell, rc::Rc};
 
 pub struct ReceiveBuilder(RcCollection<RefCell<dyn IsNode>>);
 pub struct DirtySend(Rc<RefCell<SendNode>>);

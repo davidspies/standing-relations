@@ -1,14 +1,14 @@
+mod outcome;
 mod parse;
 mod win;
 
+pub use self::outcome::Outcome;
+use super::game::{IsGame, IsPlayer, IsPosition};
+use crate::Either;
 use std::{
     cmp::Ordering,
     fmt::{self, Debug, Formatter},
 };
-
-use crate::Either;
-
-use super::game::{IsGame, IsOutcome, IsPlayer, IsPosition};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 enum Piece {
@@ -63,19 +63,6 @@ impl IsPlayer for Player {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub enum Outcome {
-    OWin,
-    Draw,
-    XWin,
-}
-
-impl IsOutcome for Outcome {
-    fn draw() -> Self {
-        Self::Draw
-    }
-}
-
 impl Player {
     fn opponent(self) -> Player {
         match self {
@@ -91,8 +78,8 @@ impl Player {
     }
     fn win(self) -> Outcome {
         match self {
-            Self::X => Outcome::XWin,
-            Self::O => Outcome::OWin,
+            Self::X => Outcome::XWin(0),
+            Self::O => Outcome::OWin(0),
         }
     }
 }

@@ -1,11 +1,10 @@
-use std::{cell::RefCell, rc::Rc, vec};
-
 use crate::{
     dirty::DirtyReceive,
     op::Op,
     pipes::{self, Receiver, Sender},
     relation::Relation,
 };
+use std::{cell::RefCell, rc::Rc, vec};
 
 pub struct Save<C: Op> {
     inner: Rc<RefCell<SaveInner<C>>>,

@@ -1,9 +1,8 @@
+use crate::{CountMap, Observable, Op, Relation};
 use std::{
     collections::{hash_map, HashMap, HashSet},
     hash::Hash,
 };
-
-use crate::{CountMap, Observable, Op, Relation};
 
 pub struct Reduce<
     K,

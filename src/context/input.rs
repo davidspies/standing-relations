@@ -1,13 +1,11 @@
-use std::{cell::RefCell, rc::Rc};
-
+use super::{handler_queue::IsInputHandler, ContextId, HandlerPosition, HandlerQueue};
 use crate::{
     dirty::{self, DirtySend},
     flat_iter::IntoFlatIterator,
     pipes::{self, Receiver},
     CreationContext, ExecutionContext, Op, Relation,
 };
-
-use super::{handler_queue::IsInputHandler, ContextId, HandlerPosition, HandlerQueue};
+use std::{cell::RefCell, rc::Rc};
 
 struct InputHandler<T> {
     receiver: pipes::Receiver<T>,
