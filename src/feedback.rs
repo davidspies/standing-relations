@@ -2,7 +2,7 @@ mod checked_foreach;
 mod pipe;
 
 use self::{checked_foreach::CheckedForeach, pipe::Pipe};
-use crate::{core, Input, Op, Output, Relation};
+use crate::{context_sends::ContextSends, core, Input, Op, Output, Relation};
 use std::{collections::HashMap, hash::Hash, ops::Deref};
 
 pub struct Feedback<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
@@ -22,16 +22,29 @@ pub struct Interrupter<C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, is
 
 pub struct CreationContext<'a, I> {
     inner: core::CreationContext<'a>,
-    feeders: Vec<Box<dyn IsFeedback<I> + 'a>>,
+    feeders: Vec<Box<dyn IsFeedback<'a, I> + 'a>>,
 }
 
 pub struct ExecutionContext<'a, I> {
     inner: core::ExecutionContext<'a>,
-    feeders: Vec<Box<dyn IsFeedback<I> + 'a>>,
+    feeders: Vec<Box<dyn IsFeedback<'a, I> + 'a>>,
 }
 
-trait IsFeedback<I> {
-    fn feed(&self, context: &core::ExecutionContext) -> Instruct<I>;
+impl<'a, I, D> ContextSends<'a, D> for ExecutionContext<'a, I> {
+    fn update_to(&self, input: &Input<'a, (D, isize)>, x: D, count: isize) {
+        input.send(self, (x, count))
+    }
+    fn send_all_to<Iter: IntoIterator<Item = (D, isize)>>(
+        &self,
+        input: &Input<'a, (D, isize)>,
+        data: Iter,
+    ) {
+        input.send_all(self, data)
+    }
+}
+
+trait IsFeedback<'a, I> {
+    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I>;
 }
 
 enum Instruct<I> {
@@ -40,8 +53,8 @@ enum Instruct<I> {
     Interrupt(I),
 }
 
-impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for Feedback<'_, C, D> {
-    fn feed(&self, context: &core::ExecutionContext) -> Instruct<I> {
+impl<'a, C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<'a, I> for Feedback<'a, C, D> {
+    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
         if m.is_empty() {
             Instruct::Unchanged
@@ -54,8 +67,10 @@ impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for Feedback<
     }
 }
 
-impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for FeedbackOnce<'_, C, D> {
-    fn feed(&self, context: &core::ExecutionContext) -> Instruct<I> {
+impl<'a, C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<'a, I>
+    for FeedbackOnce<'a, C, D>
+{
+    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
         if m.receive()
             .into_iter()
@@ -68,10 +83,10 @@ impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for FeedbackO
     }
 }
 
-impl<C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, isize>) -> I, I> IsFeedback<I>
+impl<'a, C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, isize>) -> I, I> IsFeedback<'a, I>
     for Interrupter<C, D, F, I>
 {
-    fn feed(&self, context: &core::ExecutionContext) -> Instruct<I> {
+    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
         if m.is_empty() {
             Instruct::Unchanged

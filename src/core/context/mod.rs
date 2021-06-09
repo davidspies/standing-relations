@@ -5,7 +5,7 @@ pub mod input;
 use self::handler_queue::{HandlerPosition, HandlerQueue};
 use std::{cell::RefCell, rc::Rc};
 
-pub(crate) type ContextId = usize;
+pub(in crate::core) type ContextId = usize;
 
 struct Context<'a> {
     id: usize,
@@ -46,7 +46,7 @@ impl<'a> ExecutionContext<'a> {
     pub fn commit(&mut self) {
         self.0.commit()
     }
-    pub(crate) fn get_id(&self) -> ContextId {
+    pub(in crate::core) fn get_id(&self) -> ContextId {
         self.0.id
     }
 }
