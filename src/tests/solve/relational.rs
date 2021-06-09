@@ -26,7 +26,7 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
         .save();
     let next_positions = pos_children.clone().map(|(_, c)| c);
 
-    context.feed_pipe(next_positions, position_inp);
+    context.feed_once(next_positions, position_inp);
 
     let (outcome_inp, non_draw_outcomes) = context.new_input();
     let non_draw_outcomes = non_draw_outcomes.save();
@@ -50,7 +50,7 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
 
     let output = outcomes.get_output();
 
-    context.feed_pipe(next_outcomes, outcome_inp);
+    context.feed_once(next_outcomes, outcome_inp);
 
     let mut context = context.begin();
     start_inp.add(&context, g.start());

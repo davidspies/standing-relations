@@ -11,20 +11,24 @@ mod output;
 mod pipes;
 mod relation;
 
-pub use context::input::{Input, InputSender};
-pub use context::{CreationContext, ExecutionContext};
+pub use context::{
+    input::{Input, InputSender},
+    CreationContext, ExecutionContext,
+};
 pub use convenience::Collection;
 pub use count_map::{CountMap, Observable};
-pub use feedback::{Feedback, FeedbackContext, Interrupter};
-pub use op::concat::Concat;
-pub use op::consolidate::Consolidate;
-pub use op::dynamic::Dynamic;
-pub use op::join::{AntiJoin, Join};
-pub use op::map::FlatMap;
-pub use op::reduce::Reduce;
-pub use op::save::Save;
-pub use op::split::{Either, Split};
-pub use op::Op;
+pub use feedback::{pipe::Pipe, Feedback, FeedbackContext, Interrupter};
+pub use op::{
+    concat::Concat,
+    consolidate::Consolidate,
+    dynamic::Dynamic,
+    join::{AntiJoin, Join},
+    map::FlatMap,
+    reduce::Reduce,
+    save::Save,
+    split::{Either, Split},
+    Op,
+};
 pub use output::Output;
 pub use relation::Relation;
 

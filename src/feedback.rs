@@ -1,5 +1,5 @@
 mod checked_foreach;
-mod pipe;
+pub mod pipe;
 
 use std::{collections::HashMap, hash::Hash, ops::Deref};
 
@@ -54,7 +54,7 @@ impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for Feedback<
 impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for FeedbackPipe<'_, C, D> {
     fn feed(&self, context: &ExecutionContext) -> Instruct<I> {
         let m = self.output.get(context);
-        if m.take()
+        if m.receive()
             .into_iter()
             .checked_foreach(|(x, count)| self.input.update(context, x, count))
         {
@@ -123,7 +123,7 @@ impl<'a, I> FeedbackContext<'a, I, CreationContext<'a>> {
             input,
         }))
     }
-    pub fn feed_pipe<C: Op<T = (D, isize)> + 'a, D: Clone + Eq + Hash + 'a>(
+    pub fn feed_once<C: Op<T = (D, isize)> + 'a, D: Clone + Eq + Hash + 'a>(
         &mut self,
         rel: Relation<C>,
         input: InputSender<'a, (D, isize)>,
