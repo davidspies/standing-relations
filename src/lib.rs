@@ -5,10 +5,8 @@ pub mod core;
 mod feedback;
 
 pub use self::convenience::Collection;
-pub use self::core::{
-    CountMap, CreationContext, Dynamic, Either, ExecutionContext, Input, Op, Output, Relation, Save,
-};
-pub use self::feedback::{Feedback, FeedbackContext, Interrupter};
+pub use self::core::{CountMap, Dynamic, Either, Input, Op, Output, Relation, Save};
+pub use self::feedback::{CreationContext, ExecutionContext, Feedback, Interrupter};
 
 #[cfg(test)]
 mod tests;

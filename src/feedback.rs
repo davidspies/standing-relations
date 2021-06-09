@@ -2,7 +2,7 @@ mod checked_foreach;
 mod pipe;
 
 use self::{checked_foreach::CheckedForeach, pipe::Pipe};
-use crate::{CreationContext, ExecutionContext, Input, Op, Output, Relation};
+use crate::{core, Input, Op, Output, Relation};
 use std::{collections::HashMap, hash::Hash, ops::Deref};
 
 pub struct Feedback<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
@@ -20,13 +20,18 @@ pub struct Interrupter<C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, is
     f: F,
 }
 
-pub struct FeedbackContext<'a, I, C> {
-    inner: C,
+pub struct CreationContext<'a, I> {
+    inner: core::CreationContext<'a>,
+    feeders: Vec<Box<dyn IsFeedback<I> + 'a>>,
+}
+
+pub struct ExecutionContext<'a, I> {
+    inner: core::ExecutionContext<'a>,
     feeders: Vec<Box<dyn IsFeedback<I> + 'a>>,
 }
 
 trait IsFeedback<I> {
-    fn feed(&self, context: &ExecutionContext) -> Instruct<I>;
+    fn feed(&self, context: &core::ExecutionContext) -> Instruct<I>;
 }
 
 enum Instruct<I> {
@@ -36,7 +41,7 @@ enum Instruct<I> {
 }
 
 impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for Feedback<'_, C, D> {
-    fn feed(&self, context: &ExecutionContext) -> Instruct<I> {
+    fn feed(&self, context: &core::ExecutionContext) -> Instruct<I> {
         let m = self.output.get(context);
         if m.is_empty() {
             Instruct::Unchanged
@@ -50,7 +55,7 @@ impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for Feedback<
 }
 
 impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for FeedbackOnce<'_, C, D> {
-    fn feed(&self, context: &ExecutionContext) -> Instruct<I> {
+    fn feed(&self, context: &core::ExecutionContext) -> Instruct<I> {
         let m = self.output.get(context);
         if m.receive()
             .into_iter()
@@ -66,7 +71,7 @@ impl<C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<I> for FeedbackO
 impl<C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, isize>) -> I, I> IsFeedback<I>
     for Interrupter<C, D, F, I>
 {
-    fn feed(&self, context: &ExecutionContext) -> Instruct<I> {
+    fn feed(&self, context: &core::ExecutionContext) -> Instruct<I> {
         let m = self.output.get(context);
         if m.is_empty() {
             Instruct::Unchanged
@@ -76,7 +81,7 @@ impl<C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, isize>) -> I, I> IsF
     }
 }
 
-impl<'a, I> FeedbackContext<'a, I, ExecutionContext<'a>> {
+impl<'a, I> ExecutionContext<'a, I> {
     pub fn commit(&mut self) -> Option<I> {
         'outer: loop {
             self.inner.commit();
@@ -92,21 +97,21 @@ impl<'a, I> FeedbackContext<'a, I, ExecutionContext<'a>> {
     }
 }
 
-impl<'a> FeedbackContext<'a, (), CreationContext<'a>> {
+impl<'a> CreationContext<'a, ()> {
     pub fn new() -> Self {
         Self::new_()
     }
 }
 
-impl<'a, I> FeedbackContext<'a, I, CreationContext<'a>> {
+impl<'a, I> CreationContext<'a, I> {
     pub fn new_() -> Self {
-        FeedbackContext {
-            inner: CreationContext::new(),
+        CreationContext {
+            inner: core::CreationContext::new(),
             feeders: Vec::new(),
         }
     }
-    pub fn begin(self) -> FeedbackContext<'a, I, ExecutionContext<'a>> {
-        FeedbackContext {
+    pub fn begin(self) -> ExecutionContext<'a, I> {
+        ExecutionContext {
             inner: self.inner.begin(),
             feeders: self.feeders,
         }
@@ -133,10 +138,17 @@ impl<'a, I> FeedbackContext<'a, I, CreationContext<'a>> {
     }
 }
 
-impl<I, C> Deref for FeedbackContext<'_, I, C> {
-    type Target = C;
+impl<'a, I> Deref for CreationContext<'a, I> {
+    type Target = core::CreationContext<'a>;
 
-    fn deref(&self) -> &C {
+    fn deref(&self) -> &core::CreationContext<'a> {
+        &self.inner
+    }
+}
+impl<'a, I> Deref for ExecutionContext<'a, I> {
+    type Target = core::ExecutionContext<'a>;
+
+    fn deref(&self) -> &core::ExecutionContext<'a> {
         &self.inner
     }
 }

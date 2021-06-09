@@ -27,6 +27,17 @@ pub struct Input<'a, T> {
     self_index: HandlerPosition,
 }
 
+impl<T> Clone for Input<'_, T> {
+    fn clone(&self) -> Self {
+        Input {
+            context_id: self.context_id,
+            sender: self.sender.clone(),
+            handler_queue: Rc::clone(&self.handler_queue),
+            self_index: self.self_index,
+        }
+    }
+}
+
 impl<T> Input<'_, T> {
     pub fn send(&self, context: &ExecutionContext, x: T) {
         assert_eq!(self.context_id, context.0.id, "Context mismatch");

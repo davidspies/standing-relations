@@ -4,12 +4,12 @@ use crate::{
         solve::non_loopy,
         ttt::TTT,
     },
-    FeedbackContext,
+    CreationContext,
 };
 use std::collections::HashMap;
 
 fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
-    let mut context = FeedbackContext::new();
+    let mut context = CreationContext::new();
     let (start_inp, start_position) = context.new_input();
     let (position_inp, non_start_positions) = context.new_input();
     let positions = start_position.concat(non_start_positions).distinct().save();

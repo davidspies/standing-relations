@@ -2,6 +2,12 @@ use std::{cell::RefCell, mem, rc::Rc};
 
 pub struct Sender<T>(Rc<RefCell<Vec<T>>>);
 
+impl<T> Clone for Sender<T> {
+    fn clone(&self) -> Self {
+        Sender(Rc::clone(&self.0))
+    }
+}
+
 pub struct Receiver<T>(Rc<RefCell<Vec<T>>>);
 
 impl<T> Sender<T> {
