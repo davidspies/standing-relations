@@ -2,7 +2,11 @@ mod checked_foreach;
 mod pipe;
 
 use self::{checked_foreach::CheckedForeach, pipe::Pipe};
-use crate::{context_sends::ContextSends, core, tracked, Input, Op, Output, Relation};
+use crate::{
+    core,
+    is_context::{ContextSends, IsContext},
+    tracked, Input, Op, Output, Relation,
+};
 use std::{collections::HashMap, hash::Hash, mem, ops::Deref};
 
 pub struct Feedback<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
@@ -99,12 +103,12 @@ impl<'a, C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, isize>) -> I, I>
     }
 }
 
-impl<'a, I> ExecutionContext<'a, I> {
+impl<'a, C: IsContext<'a>, I> ExecutionContext_<'a, C, I> {
     pub fn commit(&mut self) -> Option<I> {
         'outer: loop {
             self.inner.as_mut().unwrap().commit();
             for feeder in &self.feeders {
-                match feeder.feed(self.deref()) {
+                match feeder.feed(self.core_context()) {
                     Instruct::Unchanged => (),
                     Instruct::Changed => continue 'outer,
                     Instruct::Interrupt(interrupted) => return Some(interrupted),
@@ -113,7 +117,9 @@ impl<'a, I> ExecutionContext<'a, I> {
             return None;
         }
     }
+}
 
+impl<'a, I> ExecutionContext<'a, I> {
     pub fn with<
         Setup: FnOnce(&mut TrackedContext<'a, I>),
         Body: FnOnce(&mut Self, Option<I>) -> Result,
@@ -130,10 +136,10 @@ impl<'a, I> ExecutionContext<'a, I> {
             feeders: mem::take(&mut self.feeders),
         };
         setup(&mut setup_context);
+        let interrupted = setup_context.commit();
         let (inner, tracker) = setup_context.inner.unwrap().pieces();
         self.inner = Some(inner);
         self.feeders = setup_context.feeders;
-        let interrupted = self.commit();
         let result = body(self, interrupted);
         tracker.undo(self.inner.as_ref().unwrap());
         (result, self.commit())

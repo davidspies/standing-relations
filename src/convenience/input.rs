@@ -1,4 +1,4 @@
-use crate::{context_sends::ContextSends, Input};
+use crate::{is_context::ContextSends, Input};
 
 impl<'a, D> Input<'a, (D, isize)> {
     pub fn update<C: ContextSends<'a, D>>(&self, context: &C, x: D, r: isize) {

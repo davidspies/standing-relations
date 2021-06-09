@@ -1,12 +1,26 @@
 use std::cell::RefCell;
 
-use crate::{context_sends::ContextSends, core::ExecutionContext, Input};
+use crate::{
+    core::ExecutionContext,
+    is_context::{ContextSends, IsContext},
+    Input,
+};
 
 use super::tracker::ChangeTracker;
 
 pub struct TrackedContext<'a> {
     inner: ExecutionContext<'a>,
     tracker: RefCell<ChangeTracker<'a>>,
+}
+
+impl<'a> IsContext<'a> for TrackedContext<'a> {
+    fn commit(&mut self) {
+        self.inner.commit()
+    }
+
+    fn core_context(&self) -> &ExecutionContext<'a> {
+        &self.inner
+    }
 }
 
 impl<'a, D: Clone + 'a> ContextSends<'a, D> for TrackedContext<'a> {
