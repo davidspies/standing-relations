@@ -16,3 +16,15 @@ impl<'a, D: Clone + 'a> ContextSends<'a, D> for TrackedContext<'a> {
             .update(&self.inner, input, x, count);
     }
 }
+
+impl<'a> TrackedContext<'a> {
+    pub fn new(inner: ExecutionContext<'a>) -> Self {
+        TrackedContext {
+            inner,
+            tracker: RefCell::new(ChangeTracker::new()),
+        }
+    }
+    pub fn pieces(self) -> (ExecutionContext<'a>, ChangeTracker<'a>) {
+        (self.inner, self.tracker.into_inner())
+    }
+}

@@ -20,6 +20,9 @@ impl<'a, D: Clone + 'a> IsTrackedInput<'a> for TrackedChange<'a, D> {
 }
 
 impl<'a> ChangeTracker<'a> {
+    pub fn new() -> Self {
+        ChangeTracker(Vec::new())
+    }
     pub fn update<D: Clone + 'a>(
         &mut self,
         context: &ExecutionContext<'a>,

@@ -2,8 +2,8 @@ mod checked_foreach;
 mod pipe;
 
 use self::{checked_foreach::CheckedForeach, pipe::Pipe};
-use crate::{context_sends::ContextSends, core, Input, Op, Output, Relation};
-use std::{collections::HashMap, hash::Hash, ops::Deref};
+use crate::{context_sends::ContextSends, core, tracked, Input, Op, Output, Relation};
+use std::{collections::HashMap, hash::Hash, mem, ops::Deref};
 
 pub struct Feedback<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
     output: Output<D, C>,
@@ -25,21 +25,24 @@ pub struct CreationContext<'a, I> {
     feeders: Vec<Box<dyn IsFeedback<'a, I> + 'a>>,
 }
 
-pub struct ExecutionContext<'a, I> {
-    inner: core::ExecutionContext<'a>,
+pub struct ExecutionContext_<'a, C, I> {
+    inner: Option<C>,
     feeders: Vec<Box<dyn IsFeedback<'a, I> + 'a>>,
 }
 
-impl<'a, I, D> ContextSends<'a, D> for ExecutionContext<'a, I> {
+pub type ExecutionContext<'a, I> = ExecutionContext_<'a, core::ExecutionContext<'a>, I>;
+pub type TrackedContext<'a, I> = ExecutionContext_<'a, tracked::TrackedContext<'a>, I>;
+
+impl<'a, C: ContextSends<'a, D>, I, D> ContextSends<'a, D> for ExecutionContext_<'a, C, I> {
     fn update_to(&self, input: &Input<'a, (D, isize)>, x: D, count: isize) {
-        input.send(self, (x, count))
+        self.deref().update_to(input, x, count)
     }
     fn send_all_to<Iter: IntoIterator<Item = (D, isize)>>(
         &self,
         input: &Input<'a, (D, isize)>,
         data: Iter,
     ) {
-        input.send_all(self, data)
+        self.deref().send_all_to(input, data)
     }
 }
 
@@ -99,9 +102,9 @@ impl<'a, C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, isize>) -> I, I>
 impl<'a, I> ExecutionContext<'a, I> {
     pub fn commit(&mut self) -> Option<I> {
         'outer: loop {
-            self.inner.commit();
+            self.inner.as_mut().unwrap().commit();
             for feeder in &self.feeders {
-                match feeder.feed(&self.inner) {
+                match feeder.feed(self.deref()) {
                     Instruct::Unchanged => (),
                     Instruct::Changed => continue 'outer,
                     Instruct::Interrupt(interrupted) => return Some(interrupted),
@@ -109,6 +112,31 @@ impl<'a, I> ExecutionContext<'a, I> {
             }
             return None;
         }
+    }
+
+    pub fn with<
+        Setup: FnOnce(&mut TrackedContext<'a, I>),
+        Body: FnOnce(&mut Self, Option<I>) -> Result,
+        Result,
+    >(
+        &mut self,
+        setup: Setup,
+        body: Body,
+    ) -> (Result, Option<I>) {
+        let mut setup_context = ExecutionContext_ {
+            inner: Some(tracked::TrackedContext::new(
+                mem::take(&mut self.inner).unwrap(),
+            )),
+            feeders: mem::take(&mut self.feeders),
+        };
+        setup(&mut setup_context);
+        let (inner, tracker) = setup_context.inner.unwrap().pieces();
+        self.inner = Some(inner);
+        self.feeders = setup_context.feeders;
+        let interrupted = self.commit();
+        let result = body(self, interrupted);
+        tracker.undo(self.inner.as_ref().unwrap());
+        (result, self.commit())
     }
 }
 
@@ -127,7 +155,7 @@ impl<'a, I> CreationContext<'a, I> {
     }
     pub fn begin(self) -> ExecutionContext<'a, I> {
         ExecutionContext {
-            inner: self.inner.begin(),
+            inner: Some(self.inner.begin()),
             feeders: self.feeders,
         }
     }
@@ -160,10 +188,11 @@ impl<'a, I> Deref for CreationContext<'a, I> {
         &self.inner
     }
 }
-impl<'a, I> Deref for ExecutionContext<'a, I> {
-    type Target = core::ExecutionContext<'a>;
 
-    fn deref(&self) -> &core::ExecutionContext<'a> {
-        &self.inner
+impl<'a, C, I> Deref for ExecutionContext_<'a, C, I> {
+    type Target = C;
+
+    fn deref(&self) -> &C {
+        self.inner.as_ref().unwrap()
     }
 }
