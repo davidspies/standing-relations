@@ -1,4 +1,4 @@
-use crate::{Op, Relation};
+use crate::core::{Op, Relation};
 
 pub struct FlatMap<C: Op, I: IntoIterator, F: Fn(C::T) -> I> {
     inner: C,

@@ -1,4 +1,4 @@
-use crate::{Op, Relation};
+use crate::core::{Op, Relation};
 
 pub struct Dynamic<'a, T>(Box<dyn DynOp<T = T> + 'a>);
 

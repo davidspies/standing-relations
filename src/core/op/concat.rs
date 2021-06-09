@@ -1,4 +1,4 @@
-use crate::{Op, Relation};
+use crate::core::{Op, Relation};
 
 pub struct Concat<C1: Op, C2: Op<T = C1::T>>(C1, C2);
 

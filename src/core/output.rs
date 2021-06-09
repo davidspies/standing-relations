@@ -1,4 +1,6 @@
-use crate::{context::ContextId, dirty::DirtyReceive, CountMap, ExecutionContext, Op, Relation};
+use crate::core::{
+    context::ContextId, dirty::DirtyReceive, CountMap, ExecutionContext, Op, Relation,
+};
 use std::{
     cell::{Ref, RefCell},
     collections::HashMap,

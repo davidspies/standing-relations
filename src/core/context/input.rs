@@ -1,5 +1,5 @@
 use super::{handler_queue::IsInputHandler, ContextId, HandlerPosition, HandlerQueue};
-use crate::{
+use crate::core::{
     dirty::{self, DirtySend},
     flat_iter::IntoFlatIterator,
     pipes::{self, Receiver},

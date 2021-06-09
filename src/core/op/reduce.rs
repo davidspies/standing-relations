@@ -1,4 +1,4 @@
-use crate::{CountMap, Observable, Op, Relation};
+use crate::core::{CountMap, Observable, Op, Relation};
 use std::{
     collections::{hash_map, HashMap, HashSet},
     hash::Hash,

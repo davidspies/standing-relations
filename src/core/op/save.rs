@@ -1,8 +1,7 @@
-use crate::{
+use crate::core::{
     dirty::DirtyReceive,
-    op::Op,
     pipes::{self, Receiver, Sender},
-    relation::Relation,
+    Op, Relation,
 };
 use std::{cell::RefCell, rc::Rc, vec};
 

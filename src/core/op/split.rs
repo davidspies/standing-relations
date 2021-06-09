@@ -1,4 +1,4 @@
-use crate::{
+use crate::core::{
     dirty::DirtyReceive,
     pipes::{self, Receiver, Sender},
     Op, Relation,
