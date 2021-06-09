@@ -1,4 +1,4 @@
-use crate::{Op, Reduce, Relation};
+use crate::{Op, Relation};
 use std::{
     collections::{BTreeMap, HashMap},
     hash::Hash,
@@ -16,8 +16,8 @@ impl<K: Clone + Eq + Hash, X: Eq + Hash, C: Op<T = ((K, X), isize)>> Relation<C>
     pub fn reduce<Y: Clone + Eq, F: Fn(&K, &HashMap<X, isize>) -> Y>(
         self,
         f: F,
-    ) -> Relation<Reduce<K, X, C, HashMap<X, isize>, Y, F>> {
-        self.reduce_(f)
+    ) -> Relation<impl Op<T = ((K, Y), isize)>> {
+        self.reduce_::<HashMap<X, isize>, _, _>(f)
     }
 }
 
