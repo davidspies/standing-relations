@@ -24,10 +24,14 @@ impl<'a> IsContext<'a> for TrackedContext<'a> {
 }
 
 impl<'a, D: Clone + 'a> ContextSends<'a, D> for TrackedContext<'a> {
-    fn update_to(&self, input: &Input<'a, (D, isize)>, x: D, count: isize) {
+    fn send_all_to<I: IntoIterator<Item = (D, isize)>>(
+        &self,
+        input: &Input<'a, (D, isize)>,
+        data: I,
+    ) {
         self.tracker
             .borrow_mut()
-            .update(&self.inner, input, x, count);
+            .update_all(&self.inner, input, data.into_iter().collect())
     }
 }
 

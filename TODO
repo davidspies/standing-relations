@@ -2,5 +2,3 @@ ReduceOutput
 Remove CountMap constraint on Output
 
 Constants
-
-TrackedContext send_all implementation
