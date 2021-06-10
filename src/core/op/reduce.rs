@@ -1,6 +1,9 @@
+mod map;
+
+use self::map::{InsertResult, OutputMap};
 use crate::core::{CountMap, Observable, Op, Relation};
 use std::{
-    collections::{hash_map, HashMap, HashSet},
+    collections::{HashMap, HashSet},
     hash::Hash,
 };
 
@@ -10,11 +13,12 @@ pub struct Reduce<
     C: Op<T = ((K, X), isize)>,
     M: CountMap<X> + Observable,
     Y,
+    OM: OutputMap<K, Y>,
     F: Fn(&K, &M) -> Y,
 > {
     inner: C,
     in_map: HashMap<K, M>,
-    out_map: HashMap<K, Y>,
+    out_map: OM,
     f: F,
 }
 
@@ -24,8 +28,9 @@ impl<
         C: Op<T = ((K, X), isize)>,
         M: CountMap<X> + Observable,
         Y: Clone + Eq,
+        OM: OutputMap<K, Y>,
         F: Fn(&K, &M) -> Y,
-    > Op for Reduce<K, X, C, M, Y, F>
+    > Op for Reduce<K, X, C, M, Y, OM, F>
 {
     type T = ((K, Y), isize);
 
@@ -50,17 +55,10 @@ impl<
                 }
                 Some(m) => {
                     let new_val = f(&k, m);
-                    match out_map.entry(k.clone()) {
-                        hash_map::Entry::Occupied(mut occ) => {
-                            if occ.get() == &new_val {
-                                continue 'keys;
-                            }
-                            let old_val = occ.insert(new_val.clone());
-                            continuation(((k.clone(), old_val), -1));
-                        }
-                        hash_map::Entry::Vacant(vac) => {
-                            vac.insert(new_val.clone());
-                        }
+                    match out_map.insert_if_different(k.clone(), new_val.clone()) {
+                        InsertResult::NoOldValue => (),
+                        InsertResult::OldValue(old_val) => continuation(((k.clone(), old_val), -1)),
+                        InsertResult::Unchanged => continue 'keys,
                     };
                     continuation(((k, new_val), 1));
                 }
@@ -69,20 +67,31 @@ impl<
     }
 }
 
-impl<C: Op<T = ((K, X), isize)>, K: Eq + Hash + Clone, X> Relation<C> {
-    pub fn reduce_<M: CountMap<X> + Observable, Y: Clone + Eq, F: Fn(&K, &M) -> Y>(
+impl<C: Op<T = ((K, X), isize)>, K: Clone + Eq + Hash, X> Relation<C> {
+    pub fn reduce_with_output_<
+        M: CountMap<X> + Observable,
+        OM: OutputMap<K, Y> + Default,
+        Y: Clone + Eq,
+        F: Fn(&K, &M) -> Y,
+    >(
         self,
         f: F,
-    ) -> Relation<Reduce<K, X, C, M, Y, F>> {
+    ) -> Relation<Reduce<K, X, C, M, Y, OM, F>> {
         Relation {
             context_id: self.context_id,
             dirty: self.dirty,
             inner: Reduce {
                 inner: self.inner,
                 in_map: HashMap::new(),
-                out_map: HashMap::new(),
+                out_map: Default::default(),
                 f,
             },
         }
+    }
+    pub fn reduce_<M: CountMap<X> + Observable, Y: Clone + Eq, F: Fn(&K, &M) -> Y>(
+        self,
+        f: F,
+    ) -> Relation<Reduce<K, X, C, M, Y, HashMap<K, Y>, F>> {
+        self.reduce_with_output_(f)
     }
 }
