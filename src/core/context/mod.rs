@@ -40,6 +40,9 @@ impl<'a> CreationContext<'a> {
     pub fn begin(self) -> ExecutionContext<'a> {
         ExecutionContext(self.0)
     }
+    pub fn get_id(&self) -> ContextId {
+        self.0.id
+    }
 }
 
 impl<'a> ExecutionContext<'a> {

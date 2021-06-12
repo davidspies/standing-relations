@@ -1,11 +1,16 @@
 mod map;
 
 use self::map::{InsertResult, OutputMap};
-use crate::core::{CountMap, Observable, Op, Relation};
+use crate::core::{
+    context::ContextId, CountMap, CreationContext, ExecutionContext, Observable, Op, Relation, Save,
+};
 use std::{
+    cell::Ref,
     collections::{HashMap, HashSet},
     hash::Hash,
 };
+
+use super::save::SavedRef;
 
 pub struct Reduce<
     K,
@@ -93,5 +98,66 @@ impl<C: Op<T = ((K, X), isize)>, K: Clone + Eq + Hash, X> Relation<C> {
         f: F,
     ) -> Relation<Reduce<K, X, C, M, Y, HashMap<K, Y>, F>> {
         self.reduce_with_output_(f)
+    }
+}
+
+pub trait IsReduce: Op {
+    type OM;
+
+    fn get_map(&self) -> &Self::OM;
+}
+
+impl<
+        K: Clone + Eq + Hash,
+        X,
+        C: Op<T = ((K, X), isize)>,
+        M: CountMap<X> + Observable,
+        Y: Clone + Eq,
+        OM: OutputMap<K, Y>,
+        F: Fn(&K, &M) -> Y,
+    > IsReduce for Reduce<K, X, C, M, Y, OM, F>
+{
+    type OM = OM;
+
+    fn get_map(&self) -> &OM {
+        &self.out_map
+    }
+}
+
+impl<C: IsReduce> Relation<C> {
+    pub fn probe(self) -> ReduceProbe<C> {
+        ReduceProbe {
+            context_id: self.context_id,
+            inner: SavedRef::new(self),
+        }
+    }
+}
+
+pub struct ReduceProbe<C: IsReduce> {
+    context_id: ContextId,
+    inner: SavedRef<C>,
+}
+
+impl<C: IsReduce> ReduceProbe<C> {
+    pub fn get_relation(&self, context: &CreationContext<'_>) -> Relation<Save<C>>
+    where
+        C::T: Clone,
+    {
+        assert_eq!(self.context_id, context.get_id(), "Context mismatch");
+        self.inner.clone().to_relation(self.context_id)
+    }
+    pub fn get<'a>(&'a self, context: &'a ExecutionContext<'_>) -> Ref<'a, C::OM> {
+        assert_eq!(self.context_id, context.get_id(), "Context mismatch");
+        self.inner.propagate();
+        Ref::map(self.inner.borrow(), |x| x.get_map())
+    }
+}
+
+impl<C: IsReduce> Clone for ReduceProbe<C> {
+    fn clone(&self) -> Self {
+        ReduceProbe {
+            context_id: self.context_id,
+            inner: self.inner.clone(),
+        }
     }
 }

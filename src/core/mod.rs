@@ -18,7 +18,7 @@ pub use op::{
     dynamic::Dynamic,
     join::{AntiJoin, Join},
     map::FlatMap,
-    reduce::Reduce,
+    reduce::{Reduce, ReduceProbe},
     save::Save,
     split::{Either, Split},
     Op,
