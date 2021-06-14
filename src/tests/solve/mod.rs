@@ -1,2 +1,2 @@
-mod non_loopy;
-mod relational;
+pub mod non_loopy;
+pub mod relational;

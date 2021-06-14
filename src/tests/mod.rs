@@ -3,6 +3,7 @@ use std::{collections::HashMap, iter::FromIterator};
 use crate::CreationContext;
 
 mod game;
+mod player_outcome;
 mod solve;
 mod ttt;
 

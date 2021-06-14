@@ -1,14 +1,10 @@
-mod outcome;
 mod parse;
 mod win;
 
-pub use self::outcome::Outcome;
-use super::game::{IsGame, IsPlayer, IsPosition};
+use super::game::{IsGame, IsPosition};
+pub use super::player_outcome::{Outcome, Player};
 use crate::Either;
-use std::{
-    cmp::Ordering,
-    fmt::{self, Debug, Formatter},
-};
+use std::fmt::{self, Debug, Formatter};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 enum Piece {
@@ -27,8 +23,8 @@ impl Piece {
     fn player(&self) -> Option<Player> {
         match self {
             Self::E => None,
-            Self::X => Some(Player::X),
-            Self::O => Some(Player::O),
+            Self::X => Some(Player::Player1),
+            Self::O => Some(Player::Player2),
         }
     }
     fn to_chr(&self) -> char {
@@ -38,48 +34,10 @@ impl Piece {
             Self::O => 'O',
         }
     }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Player {
-    X,
-    O,
-}
-
-impl Default for Player {
-    fn default() -> Self {
-        Self::X
-    }
-}
-
-impl IsPlayer for Player {
-    type Outcome = Outcome;
-
-    fn compare(&self, l: &Outcome, r: &Outcome) -> Ordering {
-        match self {
-            Self::X => l.cmp(&r),
-            Self::O => r.cmp(&l),
-        }
-    }
-}
-
-impl Player {
-    fn opponent(self) -> Player {
-        match self {
-            Self::X => Self::O,
-            Self::O => Self::X,
-        }
-    }
-    fn piece(self) -> Piece {
-        match self {
-            Self::X => Piece::X,
-            Self::O => Piece::O,
-        }
-    }
-    fn win(self) -> Outcome {
-        match self {
-            Self::X => Outcome::XWin(0),
-            Self::O => Outcome::OWin(0),
+    fn from_player(player: &Player) -> Self {
+        match player {
+            Player::Player1 => Piece::X,
+            Player::Player2 => Piece::O,
         }
     }
 }
@@ -112,7 +70,7 @@ impl IsPosition for Position {
             for col in 0..3 {
                 if self.board[row][col] == Piece::E {
                     let mut new_board = self.board.clone();
-                    new_board[row][col] = self.turn.piece();
+                    new_board[row][col] = Piece::from_player(&self.turn);
                     moves.push(Position {
                         board: new_board,
                         turn: self.turn.opponent(),

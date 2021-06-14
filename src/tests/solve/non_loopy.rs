@@ -41,6 +41,6 @@ fn ttt_outcomes() {
     );
     assert_eq!(
         m[&ttt::Position::from_string("-O--X----")],
-        ttt::Outcome::XWin(5),
+        ttt::Outcome::Player1Win(5),
     );
 }

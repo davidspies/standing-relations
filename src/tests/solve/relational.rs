@@ -8,7 +8,7 @@ use crate::{
 };
 use std::collections::HashMap;
 
-fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
+pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
     let mut context = CreationContext::new();
     let (start_inp, start_position) = context.new_input();
     let (position_inp, non_start_positions) = context.new_input();

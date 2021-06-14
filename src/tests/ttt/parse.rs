@@ -25,9 +25,9 @@ impl Position {
             }
         }
         let turn = if x_count == o_count {
-            Player::X
+            Player::Player1
         } else if x_count == o_count + 1 {
-            Player::O
+            Player::Player2
         } else {
             panic!("Bad string")
         };
