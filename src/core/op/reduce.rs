@@ -125,7 +125,8 @@ impl<
 }
 
 impl<C: IsReduce> Relation<C> {
-    pub fn probe(self) -> ReduceProbe<C> {
+    pub fn probe(self, context: &CreationContext) -> ReduceProbe<C> {
+        assert_eq!(self.context_id, context.get_id(), "Context mismatch");
         ReduceProbe {
             context_id: self.context_id,
             inner: SavedRef::new(self),
@@ -139,11 +140,10 @@ pub struct ReduceProbe<C: IsReduce> {
 }
 
 impl<C: IsReduce> ReduceProbe<C> {
-    pub fn get_relation(&self, context: &CreationContext<'_>) -> Relation<Save<C>>
+    pub fn get_relation(&self) -> Relation<Save<C>>
     where
         C::T: Clone,
     {
-        assert_eq!(self.context_id, context.get_id(), "Context mismatch");
         self.inner.clone().to_relation(self.context_id)
     }
     pub fn get<'a>(&'a self, context: &'a ExecutionContext<'_>) -> Ref<'a, C::OM> {
