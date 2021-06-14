@@ -1,5 +1,6 @@
 use crate::core::{
-    context::ContextId, dirty::DirtyReceive, CountMap, ExecutionContext, Op, Relation,
+    context::ContextId, dirty::DirtyReceive, CountMap, CreationContext, ExecutionContext, Op,
+    Relation,
 };
 use std::{
     cell::{Ref, RefCell},
@@ -7,7 +8,8 @@ use std::{
 };
 
 impl<D, C: Op<T = (D, isize)>> Relation<C> {
-    pub fn get_output_<M: CountMap<D>>(self) -> Output<D, C, M> {
+    pub fn get_output_<M: CountMap<D>>(self, context: &CreationContext) -> Output<D, C, M> {
+        assert_eq!(self.context_id, context.get_id(), "Context mismatch");
         Output {
             context_id: self.context_id,
             dirty: self.dirty.to_receive(),

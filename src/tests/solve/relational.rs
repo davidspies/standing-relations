@@ -49,7 +49,7 @@ fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
             .backup()
     }));
 
-    let output = outcomes.get_output();
+    let output = outcomes.get_output(&context);
 
     context.feed_once(next_outcomes, outcome_inp);
 

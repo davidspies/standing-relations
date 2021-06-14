@@ -171,7 +171,7 @@ impl<'a, I> CreationContext<'a, I> {
         input: Input<'a, (D, isize)>,
     ) {
         self.feeders.push(Box::new(Feedback {
-            output: rel.get_output(),
+            output: rel.get_output(&self),
             input,
         }))
     }
@@ -181,7 +181,7 @@ impl<'a, I> CreationContext<'a, I> {
         input: Input<'a, (D, isize)>,
     ) {
         self.feeders.push(Box::new(FeedbackOnce {
-            output: rel.get_output_(),
+            output: rel.get_output_(&self),
             input,
         }))
     }

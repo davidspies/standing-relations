@@ -12,7 +12,7 @@ fn it_works() {
     let (inp, rel) = context.new_input();
     let rel = rel.save();
     let concatted = rel.clone().concat(rel);
-    let outp = concatted.get_output();
+    let outp = concatted.get_output(&context);
 
     let mut context = context.begin();
     inp.add(&context, 'a');
