@@ -5,6 +5,7 @@ use crate::CreationContext;
 mod fingers;
 mod game;
 mod player_outcome;
+mod readme;
 mod solve;
 mod ttt;
 

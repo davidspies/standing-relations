@@ -64,7 +64,7 @@ impl<T> Op for InputOp<T> {
 }
 
 impl<'a> CreationContext<'a> {
-    pub fn new_input<T: 'a>(&self) -> (Input<'a, T>, Relation<InputOp<T>>) {
+    pub fn new_input_<T: 'a>(&self) -> (Input<'a, T>, Relation<InputOp<T>>) {
         let (sender1, receiver1) = pipes::new();
         let (sender2, receiver2) = pipes::new();
         let (dirty_send, dirty_receive) = dirty::new();
