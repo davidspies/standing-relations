@@ -2,6 +2,7 @@ use std::{collections::HashMap, iter::FromIterator};
 
 use crate::CreationContext;
 
+mod fingers;
 mod game;
 mod player_outcome;
 mod solve;

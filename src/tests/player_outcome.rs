@@ -51,7 +51,7 @@ impl Ord for Outcome {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Player {
     Player1,
     Player2,
