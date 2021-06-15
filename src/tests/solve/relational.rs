@@ -43,13 +43,13 @@ pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
         .join(outcomes.clone())
         .map(|(_, p, o)| (p, o));
 
-    let next_outcomes = immediate.concat(child_outcomes.reduce(|p: &Game::Position, outs| {
+    let nonterminal_outcomes = child_outcomes.reduce(|p: &Game::Position, outs| {
         p.get_turn()
             .best_outcome(outs.keys().map(Clone::clone))
             .backup()
-    }));
-
-    let output = outcomes.get_output(&context);
+    });
+    let output_probe = nonterminal_outcomes.probe(&context);
+    let next_outcomes = immediate.concat(output_probe.get_relation());
 
     context.feed_once(next_outcomes, outcome_inp);
 
@@ -58,7 +58,7 @@ pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
 
     context.commit();
 
-    let result = output.get(&context).keys().map(Clone::clone).collect();
+    let result = output_probe.get(&context).clone();
     result
 }
 

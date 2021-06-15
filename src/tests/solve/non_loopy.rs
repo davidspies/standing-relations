@@ -22,7 +22,7 @@ fn solve_to<P: IsPosition>(this: P, known: &mut HashMap<P, P::Outcome>) -> P::Ou
             .get_turn()
             .best_outcome(moves.into_iter().map(|child| solve_to(child, known)))
             .backup(),
-        Either::Right(outcome) => outcome,
+        Either::Right(outcome) => return outcome,
     };
     known.insert(this, outcome.clone());
     outcome
