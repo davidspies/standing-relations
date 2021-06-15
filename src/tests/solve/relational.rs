@@ -48,7 +48,8 @@ pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
             .best_outcome(outs.keys().map(Clone::clone))
             .backup()
     });
-    let next_outcomes = immediate.concat(nonterminal_outcomes);
+    let probe = nonterminal_outcomes.probe(&context);
+    let next_outcomes = immediate.concat(probe.get_relation());
 
     let output = outcomes.get_output(&context);
 
