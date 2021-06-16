@@ -11,12 +11,12 @@ use std::{collections::HashMap, hash::Hash, mem, ops::Deref};
 
 pub struct Feedback<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
     output: Output<D, C>,
-    input: Input<'a, C::T>,
+    input: Input<'a, D>,
 }
 
 pub struct FeedbackOnce<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
     output: Output<D, C, Pipe<(D, isize)>>,
-    input: Input<'a, C::T>,
+    input: Input<'a, D>,
 }
 
 pub struct Interrupter<C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, isize>) -> I, I> {
@@ -38,14 +38,10 @@ pub type ExecutionContext<'a, I> = ExecutionContext_<'a, core::ExecutionContext<
 pub type TrackedContext<'a, I> = ExecutionContext_<'a, tracked::TrackedContext<'a>, I>;
 
 impl<'a, C: ContextSends<'a, D>, I, D> ContextSends<'a, D> for ExecutionContext_<'a, C, I> {
-    fn update_to(&self, input: &Input<'a, (D, isize)>, x: D, count: isize) {
+    fn update_to(&self, input: &Input<'a, D>, x: D, count: isize) {
         self.deref().update_to(input, x, count)
     }
-    fn send_all_to<Iter: IntoIterator<Item = (D, isize)>>(
-        &self,
-        input: &Input<'a, (D, isize)>,
-        data: Iter,
-    ) {
+    fn send_all_to<Iter: IntoIterator<Item = (D, isize)>>(&self, input: &Input<'a, D>, data: Iter) {
         self.deref().send_all_to(input, data)
     }
 }
@@ -168,7 +164,7 @@ impl<'a, I> CreationContext<'a, I> {
     pub fn feed<C: Op<T = (D, isize)> + 'a, D: Clone + Eq + Hash + 'a>(
         &mut self,
         rel: Relation<C>,
-        input: Input<'a, (D, isize)>,
+        input: Input<'a, D>,
     ) {
         self.feeders.push(Box::new(Feedback {
             output: rel.get_output(&self),
@@ -178,7 +174,7 @@ impl<'a, I> CreationContext<'a, I> {
     pub fn feed_once<C: Op<T = (D, isize)> + 'a, D: Clone + Eq + Hash + 'a>(
         &mut self,
         rel: Relation<C>,
-        input: Input<'a, (D, isize)>,
+        input: Input<'a, D>,
     ) {
         self.feeders.push(Box::new(FeedbackOnce {
             output: rel.get_output_(&self),

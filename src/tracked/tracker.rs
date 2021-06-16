@@ -9,7 +9,7 @@ trait IsTrackedInput<'a> {
 }
 
 struct TrackedChange<'a, D> {
-    input: Input<'a, (D, isize)>,
+    input: Input<'a, D>,
     data: Vec<(D, isize)>,
 }
 
@@ -28,7 +28,7 @@ impl<'a> ChangeTracker<'a> {
     pub fn update_all<D: Clone + 'a>(
         &mut self,
         context: &ExecutionContext<'a>,
-        input: &Input<'a, (D, isize)>,
+        input: &Input<'a, D>,
         data: Vec<(D, isize)>,
     ) {
         input.send_all(context, data.clone());

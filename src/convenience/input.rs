@@ -1,10 +1,12 @@
 use crate::{
     core::{CreationContext, InputOp},
     is_context::ContextSends,
-    Input, Relation,
+    Input_, Relation,
 };
 
-impl<'a, D> Input<'a, (D, isize)> {
+pub type Input<'a, D> = Input_<'a, (D, isize)>;
+
+impl<'a, D> Input<'a, D> {
     pub fn update<C: ContextSends<'a, D>>(&self, context: &C, x: D, r: isize) {
         context.update_to(self, x, r)
     }
@@ -27,7 +29,7 @@ impl<'a, D> Input<'a, (D, isize)> {
 }
 
 impl<'a> CreationContext<'a> {
-    pub fn new_input<D: 'a>(&self) -> (Input<'a, (D, isize)>, Relation<InputOp<(D, isize)>>) {
+    pub fn new_input<D: 'a>(&self) -> (Input<'a, D>, Relation<InputOp<(D, isize)>>) {
         self.new_input_()
     }
 }

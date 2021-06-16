@@ -8,7 +8,7 @@ mod pipes;
 mod relation;
 
 pub use context::{
-    input::{Input, InputOp},
+    input::{InputOp, Input_},
     CreationContext, ExecutionContext,
 };
 pub use count_map::{CountMap, Observable};

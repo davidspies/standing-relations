@@ -20,16 +20,16 @@ impl<T> IsInputHandler for InputHandler<T> {
     }
 }
 
-pub struct Input<'a, T> {
+pub struct Input_<'a, T> {
     context_id: ContextId,
     sender: pipes::Sender<T>,
     handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
     self_index: HandlerPosition,
 }
 
-impl<T> Clone for Input<'_, T> {
+impl<T> Clone for Input_<'_, T> {
     fn clone(&self) -> Self {
-        Input {
+        Input_ {
             context_id: self.context_id,
             sender: self.sender.clone(),
             handler_queue: Rc::clone(&self.handler_queue),
@@ -38,7 +38,7 @@ impl<T> Clone for Input<'_, T> {
     }
 }
 
-impl<T> Input<'_, T> {
+impl<T> Input_<'_, T> {
     pub fn send(&self, context: &ExecutionContext, x: T) {
         assert_eq!(self.context_id, context.0.id, "Context mismatch");
         self.handler_queue.borrow_mut().enqueue(self.self_index);
@@ -64,7 +64,7 @@ impl<T> Op for InputOp<T> {
 }
 
 impl<'a> CreationContext<'a> {
-    pub fn new_input_<T: 'a>(&self) -> (Input<'a, T>, Relation<InputOp<T>>) {
+    pub fn new_input_<T: 'a>(&self) -> (Input_<'a, T>, Relation<InputOp<T>>) {
         let (sender1, receiver1) = pipes::new();
         let (sender2, receiver2) = pipes::new();
         let (dirty_send, dirty_receive) = dirty::new();
@@ -74,7 +74,7 @@ impl<'a> CreationContext<'a> {
             dirty_send,
         };
         let i = self.0.add_handler(handler);
-        let input_sender = Input {
+        let input_sender = Input_ {
             context_id: self.0.id,
             sender: sender1,
             handler_queue: Rc::clone(self.0.get_handler_queue()),
