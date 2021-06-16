@@ -7,8 +7,8 @@ use std::{
     collections::HashMap,
 };
 
-impl<D, C: Op<T = (D, isize)>> Relation<C> {
-    pub fn get_output_<M: CountMap<D>>(self, context: &CreationContext) -> Output<D, C, M> {
+impl<C: Op> Relation<C> {
+    pub fn get_output_<M: CountMap<C::D>>(self, context: &CreationContext) -> Output<C::D, C, M> {
         assert_eq!(self.context_id, context.get_id(), "Context mismatch");
         Output {
             context_id: self.context_id,
@@ -19,14 +19,14 @@ impl<D, C: Op<T = (D, isize)>> Relation<C> {
     }
 }
 
-pub struct Output<D, C: Op<T = (D, isize)>, M: CountMap<D> = HashMap<D, isize>> {
+pub struct Output<D, C: Op<D = D>, M: CountMap<D> = HashMap<D, isize>> {
     context_id: ContextId,
     dirty: DirtyReceive,
     inner: RefCell<C>,
     data: RefCell<M>,
 }
 
-impl<D, C: Op<T = (D, isize)>, M: CountMap<D>> Output<D, C, M> {
+impl<C: Op, M: CountMap<C::D>> Output<C::D, C, M> {
     pub fn get<'a>(&'a self, context: &'a ExecutionContext<'_>) -> Ref<'a, M> {
         assert_eq!(self.context_id, context.get_id(), "Context mismatch");
         if self.dirty.take_status() {

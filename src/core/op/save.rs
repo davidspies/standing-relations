@@ -2,33 +2,33 @@ use crate::core::{
     context::ContextId,
     dirty::DirtyReceive,
     pipes::{self, Receiver, Sender},
-    Op, Relation,
+    Op_, Relation,
 };
 use std::{
     cell::{Ref, RefCell},
     rc::Rc,
 };
 
-pub struct Save<C: Op> {
+pub struct Save<C: Op_> {
     inner: SavedRef<C>,
     receiver: Receiver<Rc<Vec<C::T>>>,
 }
 
-struct SaveInner<C: Op> {
+struct SaveInner<C: Op_> {
     inner: C,
     senders: Vec<Sender<Rc<Vec<C::T>>>>,
     dirty: DirtyReceive,
 }
 
-pub(super) struct SavedRef<C: Op>(Rc<RefCell<SaveInner<C>>>);
+pub(super) struct SavedRef<C: Op_>(Rc<RefCell<SaveInner<C>>>);
 
-impl<C: Op> Clone for SavedRef<C> {
+impl<C: Op_> Clone for SavedRef<C> {
     fn clone(&self) -> Self {
         SavedRef(Rc::clone(&self.0))
     }
 }
 
-impl<C: Op> SavedRef<C> {
+impl<C: Op_> SavedRef<C> {
     pub fn new(rel: Relation<C>) -> Self {
         SavedRef(Rc::new(RefCell::new(SaveInner {
             inner: rel.inner,
@@ -68,7 +68,7 @@ impl<C: Op> SavedRef<C> {
     }
 }
 
-impl<C: Op> Op for Save<C>
+impl<C: Op_> Op_ for Save<C>
 where
     C::T: Clone,
 {
@@ -84,7 +84,7 @@ where
     }
 }
 
-impl<C: Op> Relation<C> {
+impl<C: Op_> Relation<C> {
     pub fn save(self) -> Relation<Save<C>>
     where
         C::T: Clone,
@@ -94,7 +94,7 @@ impl<C: Op> Relation<C> {
     }
 }
 
-impl<C: Op> Clone for Relation<Save<C>>
+impl<C: Op_> Clone for Relation<Save<C>>
 where
     C::T: Clone,
 {

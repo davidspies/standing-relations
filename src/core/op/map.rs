@@ -1,11 +1,11 @@
-use crate::core::{Op, Relation};
+use crate::core::{Op_, Relation};
 
-pub struct FlatMap<C: Op, I: IntoIterator, F: Fn(C::T) -> I> {
+pub struct FlatMap<C: Op_, I: IntoIterator, F: Fn(C::T) -> I> {
     inner: C,
     f: F,
 }
 
-impl<C: Op, I: IntoIterator, F: Fn(C::T) -> I> Op for FlatMap<C, I, F> {
+impl<C: Op_, I: IntoIterator, F: Fn(C::T) -> I> Op_ for FlatMap<C, I, F> {
     type T = I::Item;
 
     fn foreach<'a, G: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: G) {
@@ -18,7 +18,7 @@ impl<C: Op, I: IntoIterator, F: Fn(C::T) -> I> Op for FlatMap<C, I, F> {
     }
 }
 
-impl<C: Op> Relation<C> {
+impl<C: Op_> Relation<C> {
     pub fn flat_map_<I: IntoIterator, F: Fn(C::T) -> I>(self, f: F) -> Relation<FlatMap<C, I, F>> {
         Relation {
             context_id: self.context_id,

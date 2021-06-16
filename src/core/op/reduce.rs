@@ -2,7 +2,8 @@ mod map;
 
 use self::map::{InsertResult, OutputMap};
 use crate::core::{
-    context::ContextId, CountMap, CreationContext, ExecutionContext, Observable, Op, Relation, Save,
+    context::ContextId, CountMap, CreationContext, ExecutionContext, Observable, Op, Op_, Relation,
+    Save,
 };
 use std::{
     cell::Ref,
@@ -15,7 +16,7 @@ use super::save::SavedRef;
 pub struct Reduce<
     K,
     X,
-    C: Op<T = ((K, X), isize)>,
+    C: Op<D = (K, X)>,
     M: CountMap<X> + Observable,
     Y,
     OM: OutputMap<K, Y>,
@@ -30,12 +31,12 @@ pub struct Reduce<
 impl<
         K: Clone + Eq + Hash,
         X,
-        C: Op<T = ((K, X), isize)>,
+        C: Op<D = (K, X)>,
         M: CountMap<X> + Observable,
         Y: Clone + Eq,
         OM: OutputMap<K, Y>,
         F: Fn(&K, &M) -> Y,
-    > Op for Reduce<K, X, C, M, Y, OM, F>
+    > Op_ for Reduce<K, X, C, M, Y, OM, F>
 {
     type T = ((K, Y), isize);
 
@@ -72,7 +73,7 @@ impl<
     }
 }
 
-impl<C: Op<T = ((K, X), isize)>, K: Clone + Eq + Hash, X> Relation<C> {
+impl<C: Op<D = (K, X)>, K: Clone + Eq + Hash, X> Relation<C> {
     pub fn reduce_with_output_<
         M: CountMap<X> + Observable,
         OM: OutputMap<K, Y> + Default,
@@ -101,7 +102,7 @@ impl<C: Op<T = ((K, X), isize)>, K: Clone + Eq + Hash, X> Relation<C> {
     }
 }
 
-pub trait IsReduce: Op {
+pub trait IsReduce: Op_ {
     type OM;
 
     fn get_map(&self) -> &Self::OM;
@@ -110,7 +111,7 @@ pub trait IsReduce: Op {
 impl<
         K: Clone + Eq + Hash,
         X,
-        C: Op<T = ((K, X), isize)>,
+        C: Op<D = (K, X)>,
         M: CountMap<X> + Observable,
         Y: Clone + Eq,
         OM: OutputMap<K, Y>,

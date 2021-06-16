@@ -7,7 +7,7 @@ pub mod reduce;
 pub mod save;
 pub mod split;
 
-pub trait Op {
+pub trait Op_ {
     type T;
 
     fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, continuation: F);
@@ -16,4 +16,12 @@ pub trait Op {
         self.foreach(|x| result.push(x));
         result
     }
+}
+
+pub trait Op: Op_<T = (Self::D, isize)> {
+    type D;
+}
+
+impl<C: Op_<T = (D, isize)>, D> Op for C {
+    type D = D;
 }

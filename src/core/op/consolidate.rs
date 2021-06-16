@@ -1,10 +1,13 @@
-use crate::core::{CountMap, Op, Relation};
+use crate::core::{CountMap, Op, Op_, Relation};
 use std::{collections::HashMap, hash::Hash};
 
-pub struct Consolidate<C: Op>(C);
+pub struct Consolidate<C: Op_>(C);
 
-impl<D: Eq + Hash, C: Op<T = (D, isize)>> Op for Consolidate<C> {
-    type T = (D, isize);
+impl<C: Op> Op_ for Consolidate<C>
+where
+    C::D: Eq + Hash,
+{
+    type T = (C::D, isize);
 
     fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
         let mut m = HashMap::new();
@@ -15,7 +18,7 @@ impl<D: Eq + Hash, C: Op<T = (D, isize)>> Op for Consolidate<C> {
     }
 }
 
-impl<C: Op<T = (D, isize)>, D: Eq + Hash> Relation<C> {
+impl<C: Op_<T = (D, isize)>, D: Eq + Hash> Relation<C> {
     pub fn consolidate(self) -> Relation<Consolidate<C>> {
         Relation {
             context_id: self.context_id,

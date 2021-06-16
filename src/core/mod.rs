@@ -21,7 +21,7 @@ pub use op::{
     reduce::{IsReduce, Reduce, ReduceProbe},
     save::Save,
     split::{Either, Split},
-    Op,
+    Op, Op_,
 };
 pub use output::Output;
 pub use relation::Relation;

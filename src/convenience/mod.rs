@@ -10,8 +10,11 @@ use crate::{Dynamic, Op, Relation, Save};
 
 pub type Collection<'a, D> = Relation<Save<Dynamic<'a, (D, isize)>>>;
 
-impl<C: Op<T = (D, isize)>, D: Clone> Relation<C> {
-    pub fn collect<'a>(self) -> Collection<'a, D>
+impl<C: Op> Relation<C>
+where
+    C::D: Clone,
+{
+    pub fn collect<'a>(self) -> Collection<'a, C::D>
     where
         C: 'a,
     {

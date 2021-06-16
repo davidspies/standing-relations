@@ -1,8 +1,8 @@
-use crate::core::{Op, Relation};
+use crate::core::{Op_, Relation};
 
 pub struct Dynamic<'a, T>(Box<dyn DynOp<T = T> + 'a>);
 
-impl<'b, T> Op for Dynamic<'b, T> {
+impl<'b, T> Op_ for Dynamic<'b, T> {
     type T = T;
 
     fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, continuation: F) {
@@ -16,15 +16,15 @@ trait DynOp {
     fn foreach<'a>(&'a mut self, continuation: Box<dyn FnMut(Self::T) + 'a>);
 }
 
-impl<C: Op> DynOp for C {
+impl<C: Op_> DynOp for C {
     type T = C::T;
 
     fn foreach<'a>(&'a mut self, continuation: Box<dyn FnMut(Self::T) + 'a>) {
-        Op::foreach(self, continuation)
+        Op_::foreach(self, continuation)
     }
 }
 
-impl<C: Op> Relation<C> {
+impl<C: Op_> Relation<C> {
     pub fn dynamic<'a>(self) -> Relation<Dynamic<'a, C::T>>
     where
         C: 'a,

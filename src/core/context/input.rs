@@ -3,7 +3,7 @@ use crate::core::{
     dirty::{self, DirtySend},
     flat_iter::IntoFlatIterator,
     pipes::{self, Receiver},
-    CreationContext, ExecutionContext, Op, Relation,
+    CreationContext, ExecutionContext, Op_, Relation,
 };
 use std::{cell::RefCell, rc::Rc};
 
@@ -53,7 +53,7 @@ impl<T> Input_<'_, T> {
 
 pub struct InputOp<T>(Receiver<Vec<T>>);
 
-impl<T> Op for InputOp<T> {
+impl<T> Op_ for InputOp<T> {
     type T = T;
 
     fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {

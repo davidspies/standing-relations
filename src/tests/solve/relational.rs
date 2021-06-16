@@ -22,7 +22,7 @@ pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
         .split_by_value();
     let pos_children = pos_child_vec
         .flat_map(|(p, children)| children.into_iter().map(move |c| (p.clone(), c)))
-        .save();
+        .collect(); // Needed to avoid slow compilation
     let next_positions = pos_children.clone().map(|(_, c)| c);
 
     context.feed_once(next_positions, position_inp);
@@ -41,8 +41,7 @@ pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
     let child_outcomes = pos_children
         .map(|(p, c)| (c, p))
         .join(outcomes.clone())
-        .map(|(_, p, o)| (p, o))
-        .dynamic(); // Needed to avoid slow compilation
+        .map(|(_, p, o)| (p, o));
 
     let nonterminal_outcomes = child_outcomes.reduce(|p: &Game::Position, outs| {
         p.get_turn()

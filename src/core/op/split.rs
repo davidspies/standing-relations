@@ -1,7 +1,7 @@
 use crate::core::{
     dirty::DirtyReceive,
     pipes::{self, Receiver, Sender},
-    Op, Relation,
+    Op_, Relation,
 };
 use std::{cell::RefCell, rc::Rc};
 
@@ -10,19 +10,19 @@ pub enum Either<L, R> {
     Right(R),
 }
 
-pub struct Split<T, C: Op<T = Either<L, R>>, L, R> {
+pub struct Split<T, C: Op_<T = Either<L, R>>, L, R> {
     inner: Rc<RefCell<SplitInner<C, L, R>>>,
     receiver: Receiver<T>,
 }
 
-struct SplitInner<C: Op<T = Either<L, R>>, L, R> {
+struct SplitInner<C: Op_<T = Either<L, R>>, L, R> {
     inner: C,
     left_sender: Sender<L>,
     right_sender: Sender<R>,
     dirty: DirtyReceive,
 }
 
-impl<T, C: Op<T = Either<L, R>>, L, R> Op for Split<T, C, L, R> {
+impl<T, C: Op_<T = Either<L, R>>, L, R> Op_ for Split<T, C, L, R> {
     type T = T;
 
     fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
@@ -42,7 +42,7 @@ impl<T, C: Op<T = Either<L, R>>, L, R> Op for Split<T, C, L, R> {
     }
 }
 
-impl<C: Op<T = Either<L, R>>, L, R> Relation<C> {
+impl<C: Op_<T = Either<L, R>>, L, R> Relation<C> {
     pub fn split_(self) -> (Relation<Split<L, C, L, R>>, Relation<Split<R, C, L, R>>) {
         let mut this_dirty = self.dirty.to_receive();
         let left_dirty = this_dirty.add_target();

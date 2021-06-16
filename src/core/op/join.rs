@@ -1,7 +1,7 @@
-use crate::core::{flat_iter::IntoFlatIterator, CountMap, Op, Relation};
+use crate::core::{flat_iter::IntoFlatIterator, CountMap, Op, Op_, Relation};
 use std::{collections::HashMap, hash::Hash};
 
-pub struct Join<K, V1, V2, C1: Op<T = ((K, V1), isize)>, C2: Op<T = ((K, V2), isize)>> {
+pub struct Join<K, V1, V2, C1: Op<D = (K, V1)>, C2: Op<D = (K, V2)>> {
     left: C1,
     left_map: HashMap<K, HashMap<V1, isize>>,
     right: C2,
@@ -12,9 +12,9 @@ impl<
         K: Eq + Hash + Clone,
         V1: Eq + Hash + Clone,
         V2: Eq + Hash + Clone,
-        C1: Op<T = ((K, V1), isize)>,
-        C2: Op<T = ((K, V2), isize)>,
-    > Op for Join<K, V1, V2, C1, C2>
+        C1: Op<D = (K, V1)>,
+        C2: Op<D = (K, V2)>,
+    > Op_ for Join<K, V1, V2, C1, C2>
 {
     type T = ((K, V1, V2), isize);
 
@@ -40,19 +40,15 @@ impl<
     }
 }
 
-pub struct AntiJoin<K, V, C1: Op<T = ((K, V), isize)>, C2: Op<T = (K, isize)>> {
+pub struct AntiJoin<K, V, C1: Op<D = (K, V)>, C2: Op<D = K>> {
     left: C1,
     left_map: HashMap<K, HashMap<V, isize>>,
     right: C2,
     right_map: HashMap<K, isize>,
 }
 
-impl<
-        K: Eq + Hash + Clone,
-        V: Eq + Hash + Clone,
-        C1: Op<T = ((K, V), isize)>,
-        C2: Op<T = (K, isize)>,
-    > Op for AntiJoin<K, V, C1, C2>
+impl<K: Eq + Hash + Clone, V: Eq + Hash + Clone, C1: Op<D = (K, V)>, C2: Op<D = K>> Op_
+    for AntiJoin<K, V, C1, C2>
 {
     type T = ((K, V), isize);
 
@@ -87,8 +83,8 @@ impl<
     }
 }
 
-impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<T = ((K, V1), isize)>> Relation<C1> {
-    pub fn join<V2: Clone + Eq + Hash, C2: Op<T = ((K, V2), isize)>>(
+impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<C1> {
+    pub fn join<V2: Clone + Eq + Hash, C2: Op<D = (K, V2)>>(
         self,
         other: Relation<C2>,
     ) -> Relation<Join<K, V1, V2, C1, C2>> {
@@ -105,10 +101,7 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<T = ((K, V1), isize)>> 
         }
     }
 
-    pub fn antijoin<C2: Op<T = (K, isize)>>(
-        self,
-        other: Relation<C2>,
-    ) -> Relation<AntiJoin<K, V1, C1, C2>> {
+    pub fn antijoin<C2: Op<D = K>>(self, other: Relation<C2>) -> Relation<AntiJoin<K, V1, C1, C2>> {
         assert_eq!(self.context_id, other.context_id, "Context mismatch");
         Relation {
             context_id: self.context_id,

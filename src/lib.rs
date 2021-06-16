@@ -8,7 +8,7 @@ mod tracked;
 
 pub use self::convenience::{input::Input, Collection};
 pub use self::core::{
-    CountMap, Dynamic, Either, Input_, IsReduce, Op, Output, ReduceProbe, Relation, Save,
+    CountMap, Dynamic, Either, Input_, IsReduce, Op, Op_, Output, ReduceProbe, Relation, Save,
 };
 pub use self::feedback::{CreationContext, ExecutionContext, Feedback, Interrupter};
 

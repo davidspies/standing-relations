@@ -9,18 +9,27 @@ use crate::{
 };
 use std::{collections::HashMap, hash::Hash, mem, ops::Deref};
 
-pub struct Feedback<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
-    output: Output<D, C>,
-    input: Input<'a, D>,
+pub struct Feedback<'a, C: Op>
+where
+    C::D: Eq + Hash,
+{
+    output: Output<C::D, C>,
+    input: Input<'a, C::D>,
 }
 
-pub struct FeedbackOnce<'a, C: Op<T = (D, isize)>, D: Eq + Hash> {
-    output: Output<D, C, Pipe<(D, isize)>>,
-    input: Input<'a, D>,
+pub struct FeedbackOnce<'a, C: Op>
+where
+    C::D: Eq + Hash,
+{
+    output: Output<C::D, C, Pipe<(C::D, isize)>>,
+    input: Input<'a, C::D>,
 }
 
-pub struct Interrupter<C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, isize>) -> I, I> {
-    output: Output<D, C>,
+pub struct Interrupter<C: Op, F: Fn(&HashMap<C::D, isize>) -> I, I>
+where
+    C::D: Eq + Hash,
+{
+    output: Output<C::D, C>,
     f: F,
 }
 
@@ -56,7 +65,10 @@ enum Instruct<I> {
     Interrupt(I),
 }
 
-impl<'a, C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<'a, I> for Feedback<'a, C, D> {
+impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C>
+where
+    C::D: Clone + Eq + Hash,
+{
     fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
         if m.is_empty() {
@@ -70,8 +82,9 @@ impl<'a, C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<'a, I> for F
     }
 }
 
-impl<'a, C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<'a, I>
-    for FeedbackOnce<'a, C, D>
+impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C>
+where
+    C::D: Clone + Eq + Hash,
 {
     fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
@@ -86,8 +99,9 @@ impl<'a, C: Op<T = (D, isize)>, D: Clone + Eq + Hash, I> IsFeedback<'a, I>
     }
 }
 
-impl<'a, C: Op<T = (D, isize)>, D: Eq + Hash, F: Fn(&HashMap<D, isize>) -> I, I> IsFeedback<'a, I>
-    for Interrupter<C, D, F, I>
+impl<'a, C: Op, F: Fn(&HashMap<C::D, isize>) -> I, I> IsFeedback<'a, I> for Interrupter<C, F, I>
+where
+    C::D: Eq + Hash,
 {
     fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
@@ -161,21 +175,19 @@ impl<'a, I> CreationContext<'a, I> {
             feeders: self.feeders,
         }
     }
-    pub fn feed<C: Op<T = (D, isize)> + 'a, D: Clone + Eq + Hash + 'a>(
-        &mut self,
-        rel: Relation<C>,
-        input: Input<'a, D>,
-    ) {
+    pub fn feed<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>)
+    where
+        C::D: Clone + Eq + Hash + 'a,
+    {
         self.feeders.push(Box::new(Feedback {
             output: rel.get_output(&self),
             input,
         }))
     }
-    pub fn feed_once<C: Op<T = (D, isize)> + 'a, D: Clone + Eq + Hash + 'a>(
-        &mut self,
-        rel: Relation<C>,
-        input: Input<'a, D>,
-    ) {
+    pub fn feed_once<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>)
+    where
+        C::D: Clone + Eq + Hash + 'a,
+    {
         self.feeders.push(Box::new(FeedbackOnce {
             output: rel.get_output_(&self),
             input,
