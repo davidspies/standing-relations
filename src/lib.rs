@@ -6,7 +6,10 @@ mod feedback;
 pub mod is_context;
 mod tracked;
 
-pub use self::convenience::{input::Input, Collection};
+pub use self::convenience::{
+    input::{Input, InputRelation},
+    Collection,
+};
 pub use self::core::{
     CountMap, Dynamic, Either, Input_, IsReduce, Op, Op_, Output, ReduceProbe, Relation, Save,
 };

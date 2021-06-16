@@ -5,6 +5,7 @@ use crate::{
 };
 
 pub type Input<'a, D> = Input_<'a, (D, isize)>;
+pub type InputRelation<D> = Relation<InputOp<(D, isize)>>;
 
 impl<'a, D> Input<'a, D> {
     pub fn update<C: ContextSends<'a, D>>(&self, context: &C, x: D, r: isize) {
@@ -29,7 +30,7 @@ impl<'a, D> Input<'a, D> {
 }
 
 impl<'a> CreationContext<'a> {
-    pub fn new_input<D: 'a>(&self) -> (Input<'a, D>, Relation<InputOp<(D, isize)>>) {
+    pub fn new_input<D: 'a>(&self) -> (Input<'a, D>, InputRelation<D>) {
         self.new_input_()
     }
 }
