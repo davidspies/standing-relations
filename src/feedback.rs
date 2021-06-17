@@ -5,7 +5,7 @@ use self::{checked_foreach::CheckedForeach, pipe::Pipe};
 use crate::{
     core,
     is_context::{ContextSends, IsContext},
-    tracked, Input, Op, Output, Relation,
+    tracked, CountMap, Input, Op, Output, Relation,
 };
 use std::{collections::HashMap, hash::Hash, mem, ops::Deref};
 
@@ -25,11 +25,8 @@ where
     input: Input<'a, C::D>,
 }
 
-pub struct Interrupter<C: Op, F: Fn(&HashMap<C::D, isize>) -> I, I>
-where
-    C::D: Eq + Hash,
-{
-    output: Output<C::D, C>,
+pub struct Interrupter<C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> {
+    output: Output<C::D, C, M>,
     f: F,
 }
 
@@ -99,16 +96,14 @@ where
     }
 }
 
-impl<'a, C: Op, F: Fn(&HashMap<C::D, isize>) -> I, I> IsFeedback<'a, I> for Interrupter<C, F, I>
-where
-    C::D: Eq + Hash,
+impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
+    for Interrupter<C, M, F, I>
 {
     fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
-        if m.is_empty() {
-            Instruct::Unchanged
-        } else {
-            Instruct::Interrupt((self.f)(&m))
+        match (self.f)(&m) {
+            None => Instruct::Unchanged,
+            Some(i) => Instruct::Interrupt(i),
         }
     }
 }
@@ -192,6 +187,28 @@ impl<'a, I> CreationContext<'a, I> {
             output: rel.get_output_(&self),
             input,
         }))
+    }
+    pub fn interrupt_<C: Op + 'a, M: CountMap<C::D> + 'a, F: Fn(&M) -> Option<I> + 'a>(
+        &mut self,
+        rel: Relation<C>,
+        f: F,
+    ) where
+        I: 'a,
+    {
+        self.feeders.push(Box::new(Interrupter {
+            output: rel.get_output_(&self),
+            f,
+        }))
+    }
+    pub fn interrupt<C: Op + 'a, F: Fn(&HashMap<C::D, isize>) -> Option<I> + 'a>(
+        &mut self,
+        rel: Relation<C>,
+        f: F,
+    ) where
+        I: 'a,
+        C::D: Eq + Hash,
+    {
+        self.interrupt_(rel, f)
     }
 }
 
