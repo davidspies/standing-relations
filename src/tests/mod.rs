@@ -12,9 +12,9 @@ mod ttt;
 #[test]
 fn it_works() {
     let context = CreationContext::new();
-    let (inp, rel) = context.new_input();
+    let (inp, rel) = context.new_input::<char>();
     let rel = rel.save();
-    let concatted = rel.clone().concat(rel);
+    let concatted = rel.clone().concat(rel).t::<char>();
     let outp = concatted.get_output(&context);
 
     let mut context = context.begin();

@@ -20,4 +20,15 @@ where
     {
         self.dynamic().save()
     }
+    pub fn t<D: Is<Myself = C::D>>(self) -> Self {
+        self
+    }
+}
+
+pub trait Is {
+    type Myself;
+}
+
+impl<T> Is for T {
+    type Myself = T;
 }
