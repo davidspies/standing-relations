@@ -1,6 +1,9 @@
 use std::{cmp::Ordering, hash::Hash};
 
-use crate::Either;
+pub enum Either<L, R> {
+    Left(L),
+    Right(R),
+}
 
 pub trait IsGame {
     type Position: IsPosition<Player = Self::Player, Outcome = Self::Outcome>;
@@ -13,7 +16,7 @@ pub trait IsGame {
 pub trait IsPosition: Clone + Eq + Hash {
     type Player: IsPlayer<Outcome = Self::Outcome>;
     type Outcome: IsOutcome;
-    type MoveIter: IntoIterator<Item = Self>;
+    type MoveIter: IntoIterator<Item = Self> + Default;
 
     fn get_turn(&self) -> Self::Player;
 

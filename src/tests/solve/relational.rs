@@ -1,60 +1,66 @@
 use crate::{
     tests::{
-        game::{IsGame, IsOutcome, IsPlayer, IsPosition},
+        game::{Either, IsGame, IsOutcome, IsPlayer, IsPosition},
         solve::non_loopy,
         ttt::TTT,
     },
     CreationContext,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, iter};
 
 pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
+    let draw = IsOutcome::draw();
+
     let mut context = CreationContext::new();
-    let (start_inp, start_position) = context.new_input();
-    let (position_inp, non_start_positions) = context.new_input();
-    let positions = start_position.concat(non_start_positions).distinct().save();
-    let (pos_child_vec, immediate) = positions
-        .clone()
+    let (position_inp, positions_dupped) = context.new_input();
+    let positions = positions_dupped.distinct();
+    let (pos_children, starting_values) = positions
         .map(|p: Game::Position| {
-            let s = p.status();
-            (p, s)
+            let (it, p_clone, outcome) = match p.status() {
+                Either::Left(moves) => (moves, Some(p.clone()), IsOutcome::draw()),
+                Either::Right(outcome) => (Default::default(), None, outcome),
+            };
+            (
+                it.into_iter().map(move |x| (p_clone.clone().unwrap(), x)),
+                iter::once((p, outcome)),
+            )
         })
-        .split_by_value();
-    let pos_children = pos_child_vec
-        .flat_map(|(p, children)| children.into_iter().map(move |c| (p.clone(), c)))
-        .collect(); // Needed to avoid slow compilation
+        .split();
+    let pos_children = pos_children.save();
     let next_positions = pos_children.clone().map(|(_, c)| c);
 
-    context.feed_once(next_positions, position_inp);
+    context.feed_once(next_positions, position_inp.clone());
 
-    let (outcome_inp, non_draw_outcomes) = context.new_input();
-    let non_draw_outcomes = non_draw_outcomes.save();
-    let outcomes = non_draw_outcomes
-        .clone()
-        .concat(
-            positions
-                .minus(non_draw_outcomes.map(|(p, _)| p))
-                .map(|p| (p, IsOutcome::draw())),
-        )
-        .save();
+    let (outcome_inp, outcomes) = context.new_input();
+    context.feed_once(starting_values, outcome_inp.clone());
 
     let child_outcomes = pos_children
         .map(|(p, c)| (c, p))
-        .join(outcomes.clone())
+        .join(outcomes)
         .map(|(_, p, o)| (p, o));
 
-    let nonterminal_outcomes = child_outcomes.reduce(|p: &Game::Position, outs| {
-        p.get_turn()
-            .best_outcome(outs.keys().map(Clone::clone))
-            .backup()
-    });
-    let output_probe = nonterminal_outcomes.probe(&context);
-    let next_outcomes = immediate.concat(output_probe.get_relation());
+    let output_probe = child_outcomes
+        .reduce(|p: &Game::Position, outs| {
+            p.get_turn()
+                .best_outcome(outs.keys().map(Clone::clone))
+                .backup()
+        })
+        .probe(&context);
+    let nonterminal_outcomes = output_probe.get_relation();
 
-    context.feed_once(next_outcomes, outcome_inp);
+    context.feed_once(
+        nonterminal_outcomes.flat_map_(|((x, o), count)| {
+            if &o == &draw {
+                Vec::new()
+            } else {
+                vec![((x.clone(), o), count), ((x, IsOutcome::draw()), -count)]
+            }
+        }),
+        outcome_inp,
+    );
 
     let mut context = context.begin();
-    start_inp.add(&context, g.start());
+    position_inp.add(&context, g.start());
 
     context.commit();
 

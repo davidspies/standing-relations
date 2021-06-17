@@ -1,9 +1,6 @@
-use crate::{
-    tests::{
-        game::{IsGame, IsOutcome, IsPlayer, IsPosition},
-        ttt::{self, TTT},
-    },
-    Either,
+use crate::tests::{
+    game::{Either, IsGame, IsOutcome, IsPlayer, IsPosition},
+    ttt::{self, TTT},
 };
 use std::collections::HashMap;
 

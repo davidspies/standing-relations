@@ -1,9 +1,8 @@
-use crate::Either;
 use goldenfile::Mint;
 use std::io::Write;
 
 use super::{
-    game::{IsGame, IsPosition},
+    game::{Either, IsGame, IsPosition},
     player_outcome::{Outcome, Player},
     solve::relational,
 };

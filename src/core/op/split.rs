@@ -5,35 +5,28 @@ use crate::core::{
 };
 use std::{cell::RefCell, rc::Rc};
 
-pub enum Either<L, R> {
-    Left(L),
-    Right(R),
-}
-
-pub struct Split<T, C: Op_<T = Either<L, R>>, L, R> {
-    inner: Rc<RefCell<SplitInner<C, L, R>>>,
+pub struct Split<T, C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> {
+    inner: Rc<RefCell<SplitInner<C, LI, RI>>>,
     receiver: Receiver<T>,
 }
 
-struct SplitInner<C: Op_<T = Either<L, R>>, L, R> {
+struct SplitInner<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> {
     inner: C,
-    left_sender: Sender<L>,
-    right_sender: Sender<R>,
+    left_sender: Sender<LI::Item>,
+    right_sender: Sender<RI::Item>,
     dirty: DirtyReceive,
 }
 
-impl<T, C: Op_<T = Either<L, R>>, L, R> Op_ for Split<T, C, L, R> {
+impl<T, C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Op_ for Split<T, C, LI, RI> {
     type T = T;
 
     fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
         if self.inner.borrow().dirty.take_status() {
             let mut inner = self.inner.borrow_mut();
             let data = inner.inner.get_vec();
-            for x in data {
-                match x {
-                    Either::Left(l) => inner.left_sender.send(l),
-                    Either::Right(r) => inner.right_sender.send(r),
-                }
+            for (xl, xr) in data {
+                inner.left_sender.send_all(xl);
+                inner.right_sender.send_all(xr)
             }
         }
         for x in self.receiver.receive() {
@@ -42,8 +35,13 @@ impl<T, C: Op_<T = Either<L, R>>, L, R> Op_ for Split<T, C, L, R> {
     }
 }
 
-impl<C: Op_<T = Either<L, R>>, L, R> Relation<C> {
-    pub fn split_(self) -> (Relation<Split<L, C, L, R>>, Relation<Split<R, C, L, R>>) {
+impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
+    pub fn split_(
+        self,
+    ) -> (
+        Relation<Split<LI::Item, C, LI, RI>>,
+        Relation<Split<RI::Item, C, LI, RI>>,
+    ) {
         let mut this_dirty = self.dirty.to_receive();
         let left_dirty = this_dirty.add_target();
         let right_dirty = this_dirty.add_target();

@@ -1,9 +1,8 @@
 mod parse;
 mod win;
 
-use super::game::{IsGame, IsPosition};
+use super::game::{Either, IsGame, IsPosition};
 pub use super::player_outcome::{Outcome, Player};
-use crate::Either;
 use std::fmt::{self, Debug, Formatter};
 
 #[derive(Clone, PartialEq, Eq, Hash)]
