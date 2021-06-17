@@ -7,7 +7,7 @@ use crate::{
     is_context::{ContextSends, IsContext},
     tracked, CountMap, Input, Op, Output, Relation,
 };
-use std::{collections::HashMap, hash::Hash, mem, ops::Deref};
+use std::{hash::Hash, mem, ops::Deref};
 
 pub struct Feedback<'a, C: Op>
 where
@@ -151,12 +151,6 @@ impl<'a, I> ExecutionContext<'a, I> {
     }
 }
 
-impl<'a> CreationContext<'a, ()> {
-    pub fn new() -> Self {
-        Self::new_()
-    }
-}
-
 impl<'a, I> CreationContext<'a, I> {
     pub fn new_() -> Self {
         CreationContext {
@@ -199,16 +193,6 @@ impl<'a, I> CreationContext<'a, I> {
             output: rel.get_output_(&self),
             f,
         }))
-    }
-    pub fn interrupt<C: Op + 'a, F: Fn(&HashMap<C::D, isize>) -> Option<I> + 'a>(
-        &mut self,
-        rel: Relation<C>,
-        f: F,
-    ) where
-        I: 'a,
-        C::D: Eq + Hash,
-    {
-        self.interrupt_(rel, f)
     }
 }
 
