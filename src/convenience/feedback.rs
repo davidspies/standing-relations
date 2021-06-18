@@ -36,12 +36,12 @@ impl<'a, I> CreationContext<'a, I> {
     {
         self.feed_and(rel, input, |_, _| ())
     }
-    pub fn feed_and_track<C1: Op + 'a, C2: Op + 'a>(
+    pub fn feed_and_track<M: CountMap<C2::D>, C1: Op + 'a, C2: Op + 'a>(
         &mut self,
         rel: Relation<C1>,
         input: Input<'a, C1::D>,
         tracked: Output<C2::D, C2>,
-    ) -> TrackedOutput<C2::D>
+    ) -> TrackedOutput<C2::D, M>
     where
         C1::D: Clone + Eq + Hash + 'a,
         C2::D: Clone + Eq + Hash + 'a,
@@ -54,15 +54,15 @@ impl<'a, I> CreationContext<'a, I> {
         TrackedOutput {
             context_id,
             receiver,
-            total: RefCell::new(HashMap::new()),
+            total: RefCell::new(M::empty()),
         }
     }
 }
 
-pub struct TrackedOutput<D> {
+pub struct TrackedOutput<D, M = HashMap<D, isize>> {
     context_id: ContextId,
     receiver: Receiver<HashMap<D, isize>>,
-    total: RefCell<HashMap<D, isize>>,
+    total: RefCell<M>,
 }
 
 impl<D: Eq + Hash> TrackedOutput<D> {
