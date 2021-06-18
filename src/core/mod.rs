@@ -4,12 +4,12 @@ mod dirty;
 mod flat_iter;
 mod op;
 mod output;
-mod pipes;
+pub mod pipes;
 mod relation;
 
 pub use context::{
     input::{InputOp, Input_},
-    CreationContext, ExecutionContext,
+    ContextId, CreationContext, ExecutionContext,
 };
 pub use count_map::{CountMap, Observable};
 pub use op::{

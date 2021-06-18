@@ -7,11 +7,13 @@ pub mod is_context;
 mod tracked;
 
 pub use self::convenience::{
+    feedback::TrackedOutput,
     input::{Input, InputRelation},
     Collection, Is,
 };
 pub use self::core::{
-    CountMap, Dynamic, Input_, IsReduce, Op, Op_, Output, ReduceProbe, Relation, Save, Saved,
+    pipes, ContextId, CountMap, Dynamic, Input_, IsReduce, Op, Op_, Output, ReduceProbe, Relation,
+    Save, Saved,
 };
 pub use self::feedback::{CreationContext, ExecutionContext};
 
