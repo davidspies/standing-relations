@@ -32,8 +32,8 @@ impl<'a, C: IsContext<'a>, I> ExecutionContext_<'a, C, I> {
     pub fn commit(&mut self) -> Option<I> {
         'outer: loop {
             self.inner.as_mut().unwrap().commit();
-            for feeder in &self.feeders {
-                match feeder.feed(self.core_context()) {
+            for feeder in &mut self.feeders {
+                match feeder.feed(self.inner.as_mut().unwrap().core_context()) {
                     Instruct::Unchanged => (),
                     Instruct::Changed => continue 'outer,
                     Instruct::Interrupt(interrupted) => return Some(interrupted),

@@ -1,4 +1,4 @@
-use crate::{CreationContext, Op, Relation};
+use crate::{CreationContext, Input, Op, Relation};
 use std::{collections::HashMap, hash::Hash};
 
 impl<'a, I> CreationContext<'a, I> {
@@ -21,6 +21,12 @@ impl<'a, I> CreationContext<'a, I> {
             rel,
             move |m| if m.is_empty() { None } else { Some(i.clone()) },
         )
+    }
+    pub fn feed<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>)
+    where
+        C::D: Clone + Eq + Hash + 'a,
+    {
+        self.feed_and(rel, input, |_| ())
     }
 }
 

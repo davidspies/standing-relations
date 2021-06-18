@@ -5,7 +5,7 @@ use crate::{core::ExecutionContext, Input};
 pub trait IsContext<'a> {
     fn commit(&mut self);
 
-    fn core_context(&self) -> &ExecutionContext<'a>;
+    fn core_context(&mut self) -> &mut ExecutionContext<'a>;
 }
 
 impl<'a> IsContext<'a> for ExecutionContext<'a> {
@@ -13,7 +13,7 @@ impl<'a> IsContext<'a> for ExecutionContext<'a> {
         ExecutionContext::commit(self)
     }
 
-    fn core_context(&self) -> &ExecutionContext<'a> {
+    fn core_context(&mut self) -> &mut ExecutionContext<'a> {
         self
     }
 }

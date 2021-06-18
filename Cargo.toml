@@ -9,4 +9,4 @@ edition = "2018"
 [dependencies]
 
 [dev-dependencies]
-goldenfile = ""
+goldenfile = "1.1.0"
