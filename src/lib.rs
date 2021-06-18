@@ -1,4 +1,4 @@
-#![feature(map_first_last, type_alias_impl_trait)]
+#![feature(map_first_last, min_type_alias_impl_trait)]
 
 mod convenience;
 pub mod core;
