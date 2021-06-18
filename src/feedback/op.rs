@@ -29,7 +29,7 @@ pub struct Interrupter<C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> {
 }
 
 pub trait IsFeedback<'a, I> {
-    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I>;
+    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I>;
 }
 
 pub enum Instruct<I> {
@@ -42,12 +42,12 @@ impl<'a, C: Op, I, F: FnMut(&HashMap<C::D, isize>)> IsFeedback<'a, I> for Feedba
 where
     C::D: Clone + Eq + Hash,
 {
-    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
+    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
         if m.is_empty() {
             Instruct::Unchanged
         } else {
-            // (self.f)(&*m);
+            (self.f)(&*m);
             for (x, &count) in &*m {
                 self.input.update(context, x.clone(), count);
             }
@@ -60,7 +60,7 @@ impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C>
 where
     C::D: Clone + Eq + Hash,
 {
-    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
+    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
         if m.receive()
             .into_iter()
@@ -76,7 +76,7 @@ where
 impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
     for Interrupter<C, M, F, I>
 {
-    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
+    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
         match (self.f)(&m) {
             None => Instruct::Unchanged,
