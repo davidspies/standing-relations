@@ -11,7 +11,7 @@ use std::{
     hash::Hash,
 };
 
-use super::save::SavedRef;
+use super::save::Saved;
 
 pub struct Reduce<
     K,
@@ -130,14 +130,14 @@ impl<C: IsReduce> Relation<C> {
         assert_eq!(self.context_id, context.get_id(), "Context mismatch");
         ReduceProbe {
             context_id: self.context_id,
-            inner: SavedRef::new(self),
+            inner: Saved::new(self),
         }
     }
 }
 
 pub struct ReduceProbe<C: IsReduce> {
     context_id: ContextId,
-    inner: SavedRef<C>,
+    inner: Saved<C>,
 }
 
 impl<C: IsReduce> ReduceProbe<C> {
@@ -145,7 +145,7 @@ impl<C: IsReduce> ReduceProbe<C> {
     where
         C::T: Clone,
     {
-        self.inner.clone().to_relation(self.context_id)
+        self.inner.clone().get()
     }
     pub fn get<'a>(&'a self, context: &'a ExecutionContext<'_>) -> Ref<'a, C::OM> {
         assert_eq!(self.context_id, context.get_id(), "Context mismatch");

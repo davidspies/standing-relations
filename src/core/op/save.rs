@@ -10,7 +10,7 @@ use std::{
 };
 
 pub struct Save<C: Op_> {
-    inner: SavedRef<C>,
+    inner: Saved<C>,
     receiver: Receiver<Rc<Vec<C::T>>>,
 }
 
@@ -20,48 +20,57 @@ struct SaveInner<C: Op_> {
     dirty: DirtyReceive,
 }
 
-pub(super) struct SavedRef<C: Op_>(Rc<RefCell<SaveInner<C>>>);
+pub struct Saved<C: Op_> {
+    context_id: ContextId,
+    inner: Rc<RefCell<SaveInner<C>>>,
+}
 
-impl<C: Op_> Clone for SavedRef<C> {
+impl<C: Op_> Clone for Saved<C> {
     fn clone(&self) -> Self {
-        SavedRef(Rc::clone(&self.0))
+        Saved {
+            context_id: self.context_id,
+            inner: Rc::clone(&self.inner),
+        }
     }
 }
 
-impl<C: Op_> SavedRef<C> {
+impl<C: Op_> Saved<C> {
     pub fn new(rel: Relation<C>) -> Self {
-        SavedRef(Rc::new(RefCell::new(SaveInner {
-            inner: rel.inner,
-            senders: Vec::new(),
-            dirty: rel.dirty.to_receive(),
-        })))
+        Saved {
+            context_id: rel.context_id,
+            inner: Rc::new(RefCell::new(SaveInner {
+                inner: rel.inner,
+                senders: Vec::new(),
+                dirty: rel.dirty.to_receive(),
+            })),
+        }
     }
-    pub fn to_relation(self, context_id: ContextId) -> Relation<Save<C>>
+    pub fn get(&self) -> Relation<Save<C>>
     where
         C::T: Clone,
     {
         let (sender, receiver) = pipes::new();
         let dirty = {
-            let mut borrowed = self.0.borrow_mut();
+            let mut borrowed = self.inner.borrow_mut();
             borrowed.senders.push(sender);
             borrowed.dirty.add_target()
         };
         Relation {
-            context_id,
+            context_id: self.context_id,
             dirty,
             inner: Save {
-                inner: self,
+                inner: self.clone(),
                 receiver,
             },
         }
     }
     pub fn borrow(&self) -> Ref<C> {
-        Ref::map(self.0.borrow(), |x| &x.inner)
+        Ref::map(self.inner.borrow(), |x| &x.inner)
     }
     pub fn propagate(&self) {
-        if self.0.borrow().dirty.take_status() {
-            let data = Rc::new(self.0.borrow_mut().inner.get_vec());
-            for sender in &self.0.borrow().senders {
+        if self.inner.borrow().dirty.take_status() {
+            let data = Rc::new(self.inner.borrow_mut().inner.get_vec());
+            for sender in &self.inner.borrow().senders {
                 sender.send(Rc::clone(&data))
             }
         }
@@ -85,12 +94,11 @@ where
 }
 
 impl<C: Op_> Relation<C> {
-    pub fn save(self) -> Relation<Save<C>>
+    pub fn save(self) -> Saved<C>
     where
         C::T: Clone,
     {
-        let context_id = self.context_id;
-        SavedRef::new(self).to_relation(context_id)
+        Saved::new(self)
     }
 }
 
@@ -99,6 +107,6 @@ where
     C::T: Clone,
 {
     fn clone(&self) -> Self {
-        self.inner.inner.clone().to_relation(self.context_id)
+        self.inner.inner.get()
     }
 }

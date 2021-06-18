@@ -8,9 +8,9 @@ fn readme() {
     let (input2, relation2) = context.new_input::<(char, String)>();
 
     let foo = relation2.save();
-    let bar = relation1.join(foo.clone());
+    let bar = relation1.join(foo.get());
     let baz = foo
-        .clone()
+        .get()
         .map(|(_, s)| (s.as_str().chars().next().unwrap_or('x'), s.len()));
     let qux = bar.map(|(c, n, s)| (c, n + s.len())).concat(baz).distinct();
     let arrangement: Output<(char, usize), _> = qux.get_output(&context);

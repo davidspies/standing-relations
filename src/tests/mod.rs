@@ -14,7 +14,7 @@ fn it_works() {
     let context = CreationContext::new();
     let (inp, rel) = context.new_input::<char>();
     let rel = rel.save();
-    let concatted = rel.clone().concat(rel).t::<char>();
+    let concatted = rel.get().concat(rel.get()).t::<char>();
     let outp = concatted.get_output(&context);
 
     let mut context = context.begin();

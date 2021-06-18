@@ -11,7 +11,7 @@ pub use self::convenience::{
     Collection, Is,
 };
 pub use self::core::{
-    CountMap, Dynamic, Input_, IsReduce, Op, Op_, Output, ReduceProbe, Relation, Save,
+    CountMap, Dynamic, Input_, IsReduce, Op, Op_, Output, ReduceProbe, Relation, Save, Saved,
 };
 pub use self::feedback::{CreationContext, ExecutionContext};
 

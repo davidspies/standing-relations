@@ -19,7 +19,7 @@ pub use op::{
     join::{AntiJoin, Join},
     map::FlatMap,
     reduce::{IsReduce, Reduce, ReduceProbe},
-    save::Save,
+    save::{Save, Saved},
     split::Split,
     Op, Op_,
 };
