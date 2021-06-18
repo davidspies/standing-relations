@@ -1,34 +1,10 @@
-mod checked_foreach;
-mod pipe;
-
-use self::{checked_foreach::CheckedForeach, pipe::Pipe};
+use super::op::{Instruct, IsFeedback};
 use crate::{
     core,
     is_context::{ContextSends, IsContext},
-    tracked, CountMap, Input, Op, Output, Relation,
+    tracked, Input,
 };
-use std::{hash::Hash, mem, ops::Deref};
-
-pub struct Feedback<'a, C: Op>
-where
-    C::D: Eq + Hash,
-{
-    output: Output<C::D, C>,
-    input: Input<'a, C::D>,
-}
-
-pub struct FeedbackOnce<'a, C: Op>
-where
-    C::D: Eq + Hash,
-{
-    output: Output<C::D, C, Pipe<(C::D, isize)>>,
-    input: Input<'a, C::D>,
-}
-
-pub struct Interrupter<C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> {
-    output: Output<C::D, C, M>,
-    f: F,
-}
+use std::{mem, ops::Deref};
 
 pub struct CreationContext<'a, I> {
     inner: core::CreationContext<'a>,
@@ -49,62 +25,6 @@ impl<'a, C: ContextSends<'a, D>, I, D> ContextSends<'a, D> for ExecutionContext_
     }
     fn send_all_to<Iter: IntoIterator<Item = (D, isize)>>(&self, input: &Input<'a, D>, data: Iter) {
         self.deref().send_all_to(input, data)
-    }
-}
-
-trait IsFeedback<'a, I> {
-    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I>;
-}
-
-enum Instruct<I> {
-    Unchanged,
-    Changed,
-    Interrupt(I),
-}
-
-impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C>
-where
-    C::D: Clone + Eq + Hash,
-{
-    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
-        let m = self.output.get(context);
-        if m.is_empty() {
-            Instruct::Unchanged
-        } else {
-            for (x, &count) in &*m {
-                self.input.update(context, x.clone(), count);
-            }
-            Instruct::Changed
-        }
-    }
-}
-
-impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C>
-where
-    C::D: Clone + Eq + Hash,
-{
-    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
-        let m = self.output.get(context);
-        if m.receive()
-            .into_iter()
-            .checked_foreach(|(x, count)| self.input.update(context, x, count))
-        {
-            Instruct::Changed
-        } else {
-            Instruct::Unchanged
-        }
-    }
-}
-
-impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
-    for Interrupter<C, M, F, I>
-{
-    fn feed(&self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
-        let m = self.output.get(context);
-        match (self.f)(&m) {
-            None => Instruct::Unchanged,
-            Some(i) => Instruct::Interrupt(i),
-        }
     }
 }
 
@@ -164,35 +84,8 @@ impl<'a, I> CreationContext<'a, I> {
             feeders: self.feeders,
         }
     }
-    pub fn feed<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>)
-    where
-        C::D: Clone + Eq + Hash + 'a,
-    {
-        self.feeders.push(Box::new(Feedback {
-            output: rel.get_output(&self),
-            input,
-        }))
-    }
-    pub fn feed_once<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>)
-    where
-        C::D: Clone + Eq + Hash + 'a,
-    {
-        self.feeders.push(Box::new(FeedbackOnce {
-            output: rel.get_output_(&self),
-            input,
-        }))
-    }
-    pub fn interrupt_<C: Op + 'a, M: CountMap<C::D> + 'a, F: Fn(&M) -> Option<I> + 'a>(
-        &mut self,
-        rel: Relation<C>,
-        f: F,
-    ) where
-        I: 'a,
-    {
-        self.feeders.push(Box::new(Interrupter {
-            output: rel.get_output_(&self),
-            f,
-        }))
+    pub(super) fn add_feeder<F: IsFeedback<'a, I> + 'a>(&mut self, feeder: F) {
+        self.feeders.push(Box::new(feeder));
     }
 }
 

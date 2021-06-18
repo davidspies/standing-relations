@@ -13,7 +13,7 @@ pub use self::convenience::{
 pub use self::core::{
     CountMap, Dynamic, Input_, IsReduce, Op, Op_, Output, ReduceProbe, Relation, Save,
 };
-pub use self::feedback::{CreationContext, ExecutionContext, Feedback, Interrupter};
+pub use self::feedback::{CreationContext, ExecutionContext};
 
 #[cfg(test)]
 mod tests;
