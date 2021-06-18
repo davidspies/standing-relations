@@ -33,7 +33,7 @@ impl<'a, C: IsContext<'a>, I> ExecutionContext_<'a, C, I> {
         'outer: loop {
             self.inner.as_mut().unwrap().commit();
             for feeder in &self.feeders {
-                match feeder.feed(self.core_context()) {
+                match feeder.feed(self.inner.as_mut().unwrap().core_context()) {
                     Instruct::Unchanged => (),
                     Instruct::Changed => continue 'outer,
                     Instruct::Interrupt(interrupted) => return Some(interrupted),

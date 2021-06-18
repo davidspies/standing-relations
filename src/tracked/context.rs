@@ -18,8 +18,8 @@ impl<'a> IsContext<'a> for TrackedContext<'a> {
         self.inner.commit()
     }
 
-    fn core_context(&self) -> &ExecutionContext<'a> {
-        &self.inner
+    fn core_context(&mut self) -> &mut ExecutionContext<'a> {
+        &mut self.inner
     }
 }
 

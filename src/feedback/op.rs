@@ -4,14 +4,15 @@ mod pipe;
 use self::{checked_foreach::CheckedForeach, pipe::Pipe};
 use super::context::CreationContext;
 use crate::{core, CountMap, Input, Op, Output, Relation};
-use std::hash::Hash;
+use std::{collections::HashMap, hash::Hash};
 
-pub struct Feedback<'a, C: Op>
+pub struct Feedback<'a, C: Op, F: FnMut(&HashMap<C::D, isize>)>
 where
     C::D: Eq + Hash,
 {
     output: Output<C::D, C>,
     input: Input<'a, C::D>,
+    f: F,
 }
 
 pub struct FeedbackOnce<'a, C: Op>
@@ -37,7 +38,7 @@ pub enum Instruct<I> {
     Interrupt(I),
 }
 
-impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C>
+impl<'a, C: Op, I, F: FnMut(&HashMap<C::D, isize>)> IsFeedback<'a, I> for Feedback<'a, C, F>
 where
     C::D: Clone + Eq + Hash,
 {
@@ -46,6 +47,7 @@ where
         if m.is_empty() {
             Instruct::Unchanged
         } else {
+            // (self.f)(&*m);
             for (x, &count) in &*m {
                 self.input.update(context, x.clone(), count);
             }
@@ -84,13 +86,18 @@ impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
 }
 
 impl<'a, I> CreationContext<'a, I> {
-    pub fn feed<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>)
-    where
+    pub fn feed_and<C: Op + 'a, F: FnMut(&HashMap<C::D, isize>) + 'a>(
+        &mut self,
+        rel: Relation<C>,
+        input: Input<'a, C::D>,
+        f: F,
+    ) where
         C::D: Clone + Eq + Hash + 'a,
     {
         self.add_feeder(Feedback {
             output: rel.get_output(&self),
             input,
+            f,
         })
     }
     pub fn feed_once<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>)
