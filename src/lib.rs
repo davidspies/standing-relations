@@ -7,7 +7,6 @@ pub mod is_context;
 mod tracked;
 
 pub use self::convenience::{
-    feedback::TrackedOutput,
     input::{Input, InputRelation},
     Collection, Is,
 };
