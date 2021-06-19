@@ -84,14 +84,11 @@ impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
 }
 
 impl<'a, I> CreationContext<'a, I> {
-    pub fn feed<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>)
+    pub fn feed<C: Op + 'a>(&mut self, output: Output<C::D, C>, input: Input<'a, C::D>)
     where
         C::D: Clone + Eq + Hash + 'a,
     {
-        self.add_feeder(Feedback {
-            output: rel.get_output(&self),
-            input,
-        })
+        self.add_feeder(Feedback { output, input })
     }
     pub fn feed_once<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>)
     where
@@ -104,14 +101,11 @@ impl<'a, I> CreationContext<'a, I> {
     }
     pub fn interrupt_<C: Op + 'a, M: CountMap<C::D> + 'a, F: Fn(&M) -> Option<I> + 'a>(
         &mut self,
-        rel: Relation<C>,
+        output: Output<C::D, C, M>,
         f: F,
     ) where
         I: 'a,
     {
-        self.add_feeder(Interrupter {
-            output: rel.get_output_(&self),
-            f,
-        })
+        self.add_feeder(Interrupter { output, f })
     }
 }
