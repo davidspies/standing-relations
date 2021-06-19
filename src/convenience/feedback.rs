@@ -12,15 +12,15 @@ impl<'a, I> CreationContext<'a, I> {
     {
         self.interrupt_(rel, f)
     }
-    pub fn interrupt_nonempty<C: Op + 'a>(&mut self, rel: Relation<C>, i: I)
-    where
+    pub fn interrupt_nonempty<C: Op + 'a, F: Fn(&HashMap<C::D, isize>) -> I + 'a>(
+        &mut self,
+        rel: Relation<C>,
+        f: F,
+    ) where
         I: Clone + 'a,
         C::D: Eq + Hash,
     {
-        self.interrupt(
-            rel,
-            move |m| if m.is_empty() { None } else { Some(i.clone()) },
-        )
+        self.interrupt(rel, move |m| if m.is_empty() { None } else { Some(f(m)) })
     }
 }
 
