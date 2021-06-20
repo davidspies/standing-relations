@@ -27,7 +27,7 @@ pub trait IsPlayer {
     type Outcome: IsOutcome;
 
     fn compare(&self, l: &Self::Outcome, r: &Self::Outcome) -> Ordering;
-    fn best_outcome<I: IntoIterator<Item = Self::Outcome>>(&self, iter: I) -> Self::Outcome {
+    fn best_outcome(&self, iter: impl IntoIterator<Item = Self::Outcome>) -> Self::Outcome {
         let mut best = None;
         for outcome in iter {
             match best {

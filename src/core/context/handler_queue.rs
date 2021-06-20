@@ -24,7 +24,7 @@ impl<'a> HandlerQueue<'a> {
             queued_handler_inds: Vec::new(),
         }
     }
-    fn add_handler<H: IsInputHandler + 'a>(&mut self, handler: H) -> HandlerPosition {
+    fn add_handler(&mut self, handler: impl IsInputHandler + 'a) -> HandlerPosition {
         let pos = self.handlers.len();
         self.handlers.push(Handler {
             dumper: Box::new(handler),
@@ -51,7 +51,7 @@ impl<'a> HandlerQueue<'a> {
 }
 
 impl<'a> Context<'a> {
-    pub(super) fn add_handler<H: IsInputHandler + 'a>(&self, handler: H) -> HandlerPosition {
+    pub(super) fn add_handler(&self, handler: impl IsInputHandler + 'a) -> HandlerPosition {
         self.handler_queue.borrow_mut().add_handler(handler)
     }
 }

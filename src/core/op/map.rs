@@ -8,7 +8,7 @@ pub struct FlatMap<C: Op_, I: IntoIterator, F: Fn(C::T) -> I> {
 impl<C: Op_, I: IntoIterator, F: Fn(C::T) -> I> Op_ for FlatMap<C, I, F> {
     type T = I::Item;
 
-    fn foreach<'a, G: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: G) {
+    fn foreach<'a>(&'a mut self, mut continuation: impl FnMut(Self::T) + 'a) {
         let FlatMap { inner, f } = self;
         inner.foreach(|x| {
             for y in f(x) {

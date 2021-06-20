@@ -83,7 +83,7 @@ where
 {
     type T = C::T;
 
-    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
+    fn foreach<'a>(&'a mut self, mut continuation: impl FnMut(Self::T) + 'a) {
         self.inner.propagate();
         for data in self.receiver.receive() {
             for x in &*data {

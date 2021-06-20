@@ -9,7 +9,7 @@ where
 {
     type T = (C::D, isize);
 
-    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
+    fn foreach<'a>(&'a mut self, mut continuation: impl FnMut(Self::T) + 'a) {
         let mut m = HashMap::new();
         self.0.foreach(|(x, count)| m.add(x, count));
         for x in m {

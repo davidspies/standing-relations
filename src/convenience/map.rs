@@ -8,22 +8,22 @@ impl<C: Op_> Relation<C> {
 }
 
 impl<C: Op> Relation<C> {
-    pub fn flat_map<I: IntoIterator, F: Fn(C::D) -> I>(
+    pub fn flat_map<I: IntoIterator>(
         self,
-        f: F,
+        f: impl Fn(C::D) -> I,
     ) -> Relation<impl Op<D = I::Item>> {
         self.flat_map_(move |(x, count)| f(x).into_iter().map(move |y| (y, count)))
     }
 
-    pub fn map<Y, F: Fn(C::D) -> Y>(self, f: F) -> Relation<impl Op<D = Y>> {
+    pub fn map<Y>(self, f: impl Fn(C::D) -> Y) -> Relation<impl Op<D = Y>> {
         self.flat_map(move |x| iter::once(f(x)))
     }
 
-    pub fn filter<F: Fn(&C::D) -> bool>(self, f: F) -> Relation<impl Op<D = C::D>> {
+    pub fn filter(self, f: impl Fn(&C::D) -> bool) -> Relation<impl Op<D = C::D>> {
         self.flat_map(move |x| if f(&x) { Some(x) } else { None })
     }
 
-    pub fn map_counts<F: Fn(isize) -> isize>(self, f: F) -> Relation<impl Op<D = C::D>> {
+    pub fn map_counts(self, f: impl Fn(isize) -> isize) -> Relation<impl Op<D = C::D>> {
         self.flat_map_(move |(x, count)| iter::once((x, f(count))))
     }
 

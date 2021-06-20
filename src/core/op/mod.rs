@@ -10,7 +10,7 @@ pub mod split;
 pub trait Op_ {
     type T;
 
-    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, continuation: F);
+    fn foreach<'a>(&'a mut self, continuation: impl FnMut(Self::T) + 'a);
     fn get_vec(&mut self) -> Vec<Self::T> {
         let mut result = Vec::new();
         self.foreach(|x| result.push(x));

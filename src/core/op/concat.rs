@@ -5,7 +5,7 @@ pub struct Concat<C1: Op_, C2: Op_<T = C1::T>>(C1, C2);
 impl<C1: Op_, C2: Op_<T = C1::T>> Op_ for Concat<C1, C2> {
     type T = C1::T;
 
-    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
+    fn foreach<'a>(&'a mut self, mut continuation: impl FnMut(Self::T) + 'a) {
         self.0.foreach(&mut continuation);
         self.1.foreach(continuation);
     }

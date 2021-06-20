@@ -22,14 +22,14 @@ pub trait ContextSends<'a, D> {
     fn update_to(&self, input: &Input<'a, D>, x: D, count: isize) {
         self.send_all_to(input, iter::once((x, count)))
     }
-    fn send_all_to<I: IntoIterator<Item = (D, isize)>>(&self, input: &Input<'a, D>, iter: I);
+    fn send_all_to(&self, input: &Input<'a, D>, iter: impl IntoIterator<Item = (D, isize)>);
 }
 
 impl<'a, D> ContextSends<'a, D> for ExecutionContext<'a> {
     fn update_to(&self, input: &Input<'a, D>, x: D, count: isize) {
         input.send(self, (x, count))
     }
-    fn send_all_to<I: IntoIterator<Item = (D, isize)>>(&self, input: &Input<'a, D>, iter: I) {
+    fn send_all_to(&self, input: &Input<'a, D>, iter: impl IntoIterator<Item = (D, isize)>) {
         input.send_all(self, iter)
     }
 }

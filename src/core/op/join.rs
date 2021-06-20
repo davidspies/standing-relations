@@ -18,7 +18,7 @@ impl<
 {
     type T = ((K, V1, V2), isize);
 
-    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
+    fn foreach<'a>(&'a mut self, mut continuation: impl FnMut(Self::T) + 'a) {
         let Join {
             left,
             left_map,
@@ -52,7 +52,7 @@ impl<K: Eq + Hash + Clone, V: Eq + Hash + Clone, C1: Op<D = (K, V)>, C2: Op<D = 
 {
     type T = ((K, V), isize);
 
-    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
+    fn foreach<'a>(&'a mut self, mut continuation: impl FnMut(Self::T) + 'a) {
         let AntiJoin {
             left,
             left_map,

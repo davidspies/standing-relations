@@ -5,7 +5,7 @@ pub struct Dynamic<'a, T>(Box<dyn DynOp<T = T> + 'a>);
 impl<'b, T> Op_ for Dynamic<'b, T> {
     type T = T;
 
-    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, continuation: F) {
+    fn foreach<'a>(&'a mut self, continuation: impl FnMut(Self::T) + 'a) {
         self.0.foreach(Box::new(continuation))
     }
 }

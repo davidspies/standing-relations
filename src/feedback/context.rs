@@ -23,7 +23,7 @@ impl<'a, C: ContextSends<'a, D>, I, D> ContextSends<'a, D> for ExecutionContext_
     fn update_to(&self, input: &Input<'a, D>, x: D, count: isize) {
         self.deref().update_to(input, x, count)
     }
-    fn send_all_to<Iter: IntoIterator<Item = (D, isize)>>(&self, input: &Input<'a, D>, data: Iter) {
+    fn send_all_to(&self, input: &Input<'a, D>, data: impl IntoIterator<Item = (D, isize)>) {
         self.deref().send_all_to(input, data)
     }
 }
@@ -45,15 +45,11 @@ impl<'a, C: IsContext<'a>, I> ExecutionContext_<'a, C, I> {
 }
 
 impl<'a, I> ExecutionContext<'a, I> {
-    pub fn with<
-        Setup: FnOnce(&mut TrackedContext<'a, I>),
-        Body: FnOnce(&mut Self, Option<I>) -> Result,
-        Result,
-    >(
+    pub fn with<R>(
         &mut self,
-        setup: Setup,
-        body: Body,
-    ) -> (Result, Option<I>) {
+        setup: impl FnOnce(&mut TrackedContext<'a, I>),
+        body: impl FnOnce(&mut Self, Option<I>) -> R,
+    ) -> (R, Option<I>) {
         let mut setup_context = ExecutionContext_ {
             inner: Some(tracked::TrackedContext::new(
                 mem::take(&mut self.inner).unwrap(),
@@ -84,7 +80,7 @@ impl<'a, I> CreationContext<'a, I> {
             feeders: self.feeders,
         }
     }
-    pub(super) fn add_feeder<F: IsFeedback<'a, I> + 'a>(&mut self, feeder: F) {
+    pub(super) fn add_feeder(&mut self, feeder: impl IsFeedback<'a, I> + 'a) {
         self.feeders.push(Box::new(feeder));
     }
 }

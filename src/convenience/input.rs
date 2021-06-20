@@ -8,22 +8,22 @@ pub type Input<'a, D> = Input_<'a, (D, isize)>;
 pub type InputRelation<D> = Relation<InputOp<(D, isize)>>;
 
 impl<'a, D> Input<'a, D> {
-    pub fn update<C: ContextSends<'a, D>>(&self, context: &C, x: D, r: isize) {
+    pub fn update(&self, context: &impl ContextSends<'a, D>, x: D, r: isize) {
         context.update_to(self, x, r)
     }
-    pub fn add<C: ContextSends<'a, D>>(&self, context: &C, x: D) {
+    pub fn add(&self, context: &impl ContextSends<'a, D>, x: D) {
         self.update(context, x, 1)
     }
-    pub fn add_all<I: IntoIterator<Item = D>, C: ContextSends<'a, D>>(&self, context: &C, data: I) {
+    pub fn add_all(&self, context: &impl ContextSends<'a, D>, data: impl IntoIterator<Item = D>) {
         context.send_all_to(self, data.into_iter().map(|x| (x, 1)));
     }
-    pub fn remove<C: ContextSends<'a, D>>(&self, context: &C, x: D) {
+    pub fn remove(&self, context: &impl ContextSends<'a, D>, x: D) {
         self.update(context, x, -1)
     }
-    pub fn remove_all<I: IntoIterator<Item = D>, C: ContextSends<'a, D>>(
+    pub fn remove_all(
         &self,
-        context: &C,
-        data: I,
+        context: &impl ContextSends<'a, D>,
+        data: impl IntoIterator<Item = D>,
     ) {
         context.send_all_to(self, data.into_iter().map(|x| (x, -1)));
     }

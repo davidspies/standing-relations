@@ -23,7 +23,7 @@ impl<TI: IntoIterator, C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator>
 {
     type T = TI::Item;
 
-    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
+    fn foreach<'a>(&'a mut self, mut continuation: impl FnMut(Self::T) + 'a) {
         if self.inner.borrow().dirty.take_status() {
             let mut inner = self.inner.borrow_mut();
             let data = inner.inner.get_vec();

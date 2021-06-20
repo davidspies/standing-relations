@@ -16,9 +16,9 @@ where
 }
 
 impl<K: Clone + Eq + Hash, X: Eq + Hash, C: Op<D = (K, X)>> Relation<C> {
-    pub fn reduce<Y: Clone + Eq, F: Fn(&K, &HashMap<X, isize>) -> Y>(
+    pub fn reduce<Y: Clone + Eq>(
         self,
-        f: F,
+        f: impl Fn(&K, &HashMap<X, isize>) -> Y,
     ) -> Relation<impl IsReduce<T = ((K, Y), isize), OM = HashMap<K, Y>>> {
         self.reduce_::<HashMap<X, isize>, _, _>(f)
     }

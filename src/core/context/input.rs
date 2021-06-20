@@ -44,7 +44,7 @@ impl<T> Input_<'_, T> {
         self.handler_queue.borrow_mut().enqueue(self.self_index);
         self.sender.send(x)
     }
-    pub fn send_all<I: IntoIterator<Item = T>>(&self, context: &ExecutionContext, data: I) {
+    pub fn send_all(&self, context: &ExecutionContext, data: impl IntoIterator<Item = T>) {
         assert_eq!(self.context_id, context.0.id, "Context mismatch");
         self.handler_queue.borrow_mut().enqueue(self.self_index);
         self.sender.send_all(data);
@@ -56,7 +56,7 @@ pub struct InputOp<T>(Receiver<Vec<T>>);
 impl<T> Op_ for InputOp<T> {
     type T = T;
 
-    fn foreach<'a, F: FnMut(Self::T) + 'a>(&'a mut self, mut continuation: F) {
+    fn foreach<'a>(&'a mut self, mut continuation: impl FnMut(Self::T) + 'a) {
         for x in self.0.receive().into_flat_iter() {
             continuation(x)
         }
