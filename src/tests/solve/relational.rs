@@ -26,7 +26,7 @@ pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
             )
         })
         .split();
-    let pos_children = pos_children.save();
+    let pos_children = pos_children.collect();
     let next_positions = pos_children.get().map(|(_, c)| c);
 
     context.feed_once(next_positions, position_inp.clone());
