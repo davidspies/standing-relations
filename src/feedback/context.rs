@@ -2,7 +2,8 @@ use super::op::{Instruct, IsFeedback};
 use crate::{
     core,
     is_context::{ContextSends, IsContext},
-    tracked, Input,
+    tracked::{self, ChangeTracker},
+    Input,
 };
 use std::{mem, ops::Deref};
 
@@ -45,11 +46,10 @@ impl<'a, C: IsContext<'a>, I> ExecutionContext_<'a, C, I> {
 }
 
 impl<'a, I> ExecutionContext<'a, I> {
-    pub fn with<R>(
-        &mut self,
+    pub fn with<'b>(
+        &'b mut self,
         setup: impl FnOnce(&mut TrackedContext<'a, I>),
-        body: impl FnOnce(&mut Self, Option<I>) -> R,
-    ) -> (R, Option<I>) {
+    ) -> With<'b, 'a, I> {
         let mut setup_context = ExecutionContext_ {
             inner: Some(tracked::TrackedContext::new(
                 mem::take(&mut self.inner).unwrap(),
@@ -57,13 +57,49 @@ impl<'a, I> ExecutionContext<'a, I> {
             feeders: mem::take(&mut self.feeders),
         };
         setup(&mut setup_context);
-        let interrupted = setup_context.commit();
+        let interrupted_in_setup = setup_context.commit();
         let (inner, tracker) = setup_context.inner.unwrap().pieces();
         self.inner = Some(inner);
         self.feeders = setup_context.feeders;
-        let result = body(self, interrupted);
-        tracker.undo(self.inner.as_ref().unwrap());
-        (result, self.commit())
+        With(Some(WithInner {
+            context: self,
+            interrupted_in_setup,
+            tracker,
+        }))
+    }
+}
+
+pub struct WithInner<'b, 'a, I> {
+    context: &'b mut ExecutionContext<'a, I>,
+    interrupted_in_setup: Option<I>,
+    tracker: ChangeTracker<'a>,
+}
+
+pub struct With<'b, 'a, I>(Option<WithInner<'b, 'a, I>>);
+
+impl<I> Drop for With<'_, '_, I> {
+    fn drop(&mut self) {
+        self.0.take().map(|inner| inner.go(|_, _| ()));
+    }
+}
+
+impl<'a, I> With<'_, 'a, I> {
+    pub fn go<R>(
+        mut self,
+        body: impl FnOnce(&mut ExecutionContext<'a, I>, Option<I>) -> R,
+    ) -> (R, Option<I>) {
+        self.0.take().unwrap().go(body)
+    }
+}
+
+impl<'a, I> WithInner<'_, 'a, I> {
+    fn go<R>(
+        self,
+        body: impl FnOnce(&mut ExecutionContext<'a, I>, Option<I>) -> R,
+    ) -> (R, Option<I>) {
+        let result = body(self.context, self.interrupted_in_setup);
+        self.tracker.undo(self.context.inner.as_ref().unwrap());
+        (result, self.context.commit())
     }
 }
 

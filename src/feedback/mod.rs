@@ -1,4 +1,4 @@
 mod context;
 mod op;
 
-pub use self::context::{CreationContext, ExecutionContext};
+pub use self::context::{CreationContext, ExecutionContext, With};

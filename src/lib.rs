@@ -14,7 +14,7 @@ pub use self::core::{
     pipes, ContextId, CountMap, Dynamic, Input_, IsReduce, Op, Op_, Output, ReduceProbe, Relation,
     Save, Saved,
 };
-pub use self::feedback::{CreationContext, ExecutionContext};
+pub use self::feedback::{CreationContext, ExecutionContext, With};
 
 #[cfg(test)]
 mod tests;
