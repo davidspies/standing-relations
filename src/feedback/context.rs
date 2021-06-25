@@ -84,22 +84,16 @@ impl<I> Drop for With<'_, '_, I> {
 }
 
 impl<'a, I> With<'_, 'a, I> {
-    pub fn go<R>(
-        mut self,
-        body: impl FnOnce(&mut ExecutionContext<'a, I>, Option<I>) -> R,
-    ) -> (R, Option<I>) {
+    pub fn go<R>(mut self, body: impl FnOnce(&mut ExecutionContext<'a, I>, Option<I>) -> R) -> R {
         self.0.take().unwrap().go(body)
     }
 }
 
 impl<'a, I> WithInner<'_, 'a, I> {
-    fn go<R>(
-        self,
-        body: impl FnOnce(&mut ExecutionContext<'a, I>, Option<I>) -> R,
-    ) -> (R, Option<I>) {
+    fn go<R>(self, body: impl FnOnce(&mut ExecutionContext<'a, I>, Option<I>) -> R) -> R {
         let result = body(self.context, self.interrupted_in_setup);
         self.tracker.undo(self.context.inner.as_ref().unwrap());
-        (result, self.context.commit())
+        result
     }
 }
 
