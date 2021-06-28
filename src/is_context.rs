@@ -6,6 +6,16 @@ pub trait IsContext<'a> {
     fn commit(&mut self);
 
     fn core_context(&mut self) -> &mut ExecutionContext<'a>;
+
+    fn update_to<D: Clone + 'a>(&self, input: &Input<'a, D>, x: D, count: isize) {
+        self.send_all_to(input, iter::once((x, count)))
+    }
+
+    fn send_all_to<D: Clone + 'a>(
+        &self,
+        input: &Input<'a, D>,
+        iter: impl IntoIterator<Item = (D, isize)>,
+    );
 }
 
 impl<'a> IsContext<'a> for ExecutionContext<'a> {
@@ -16,20 +26,16 @@ impl<'a> IsContext<'a> for ExecutionContext<'a> {
     fn core_context(&mut self) -> &mut ExecutionContext<'a> {
         self
     }
-}
 
-pub trait ContextSends<'a, D> {
-    fn update_to(&self, input: &Input<'a, D>, x: D, count: isize) {
-        self.send_all_to(input, iter::once((x, count)))
-    }
-    fn send_all_to(&self, input: &Input<'a, D>, iter: impl IntoIterator<Item = (D, isize)>);
-}
-
-impl<'a, D> ContextSends<'a, D> for ExecutionContext<'a> {
-    fn update_to(&self, input: &Input<'a, D>, x: D, count: isize) {
+    fn update_to<D: Clone>(&self, input: &Input<'a, D>, x: D, count: isize) {
         input.send(self, (x, count))
     }
-    fn send_all_to(&self, input: &Input<'a, D>, iter: impl IntoIterator<Item = (D, isize)>) {
+
+    fn send_all_to<D: Clone>(
+        &self,
+        input: &Input<'a, D>,
+        iter: impl IntoIterator<Item = (D, isize)>,
+    ) {
         input.send_all(self, iter)
     }
 }

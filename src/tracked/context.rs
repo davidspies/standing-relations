@@ -1,10 +1,6 @@
 use std::cell::RefCell;
 
-use crate::{
-    core::ExecutionContext,
-    is_context::{ContextSends, IsContext},
-    Input,
-};
+use crate::{core::ExecutionContext, is_context::IsContext, Input};
 
 use super::tracker::ChangeTracker;
 
@@ -21,10 +17,12 @@ impl<'a> IsContext<'a> for TrackedContext<'a> {
     fn core_context(&mut self) -> &mut ExecutionContext<'a> {
         &mut self.inner
     }
-}
 
-impl<'a, D: Clone + 'a> ContextSends<'a, D> for TrackedContext<'a> {
-    fn send_all_to(&self, input: &Input<'a, D>, data: impl IntoIterator<Item = (D, isize)>) {
+    fn send_all_to<D: Clone + 'a>(
+        &self,
+        input: &Input<'a, D>,
+        data: impl IntoIterator<Item = (D, isize)>,
+    ) {
         self.tracker
             .borrow_mut()
             .update_all(&self.inner, input, data.into_iter().collect())

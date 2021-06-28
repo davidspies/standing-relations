@@ -1,7 +1,7 @@
 use super::op::{Instruct, IsFeedback};
 use crate::{
     core,
-    is_context::{ContextSends, IsContext},
+    is_context::IsContext,
     tracked::{self, ChangeTracker},
     Input,
 };
@@ -20,12 +20,25 @@ pub struct ExecutionContext_<'a, C, I> {
 pub type ExecutionContext<'a, I> = ExecutionContext_<'a, core::ExecutionContext<'a>, I>;
 pub type TrackedContext<'a, I> = ExecutionContext_<'a, tracked::TrackedContext<'a>, I>;
 
-impl<'a, C: ContextSends<'a, D>, I, D> ContextSends<'a, D> for ExecutionContext_<'a, C, I> {
-    fn update_to(&self, input: &Input<'a, D>, x: D, count: isize) {
+impl<'a, C: IsContext<'a>, I> IsContext<'a> for ExecutionContext_<'a, C, I> {
+    fn update_to<D: Clone + 'a>(&self, input: &Input<'a, D>, x: D, count: isize) {
         self.deref().update_to(input, x, count)
     }
-    fn send_all_to(&self, input: &Input<'a, D>, data: impl IntoIterator<Item = (D, isize)>) {
+
+    fn send_all_to<D: Clone + 'a>(
+        &self,
+        input: &Input<'a, D>,
+        data: impl IntoIterator<Item = (D, isize)>,
+    ) {
         self.deref().send_all_to(input, data)
+    }
+
+    fn commit(&mut self) {
+        self.commit();
+    }
+
+    fn core_context(&mut self) -> &mut core::ExecutionContext<'a> {
+        self.inner.as_mut().unwrap().core_context()
     }
 }
 

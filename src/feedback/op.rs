@@ -39,7 +39,7 @@ pub enum Instruct<I> {
 
 impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C>
 where
-    C::D: Clone + Eq + Hash,
+    C::D: Clone + Eq + Hash + 'a,
 {
     fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
@@ -56,7 +56,7 @@ where
 
 impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C>
 where
-    C::D: Clone + Eq + Hash,
+    C::D: Clone + Eq + Hash + 'a,
 {
     fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
