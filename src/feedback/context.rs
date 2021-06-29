@@ -2,7 +2,7 @@ use super::op::{Instruct, IsFeedback};
 use crate::{
     core,
     is_context::IsContext,
-    tracked::{self, ChangeTracker},
+    tracked::{self, ChangeTracker, IsTrackedInput},
     Input,
 };
 use std::{mem, ops::Deref};
@@ -37,8 +37,12 @@ impl<'a, C: IsContext<'a>, I> IsContext<'a> for ExecutionContext_<'a, C, I> {
         self.commit();
     }
 
-    fn core_context(&mut self) -> &mut core::ExecutionContext<'a> {
-        self.inner.as_mut().unwrap().core_context()
+    fn core_context(&self) -> &core::ExecutionContext<'a> {
+        self.deref().core_context()
+    }
+
+    fn update_tracked(&self, tracked: impl IsTrackedInput<'a> + 'a) {
+        self.deref().update_tracked(tracked)
     }
 }
 
@@ -46,8 +50,9 @@ impl<'a, C: IsContext<'a>, I> ExecutionContext_<'a, C, I> {
     pub fn commit(&mut self) -> Option<I> {
         'outer: loop {
             self.inner.as_mut().unwrap().commit();
+            let inner_context = self.inner.as_ref().unwrap();
             for feeder in &mut self.feeders {
-                match feeder.feed(self.inner.as_mut().unwrap().core_context()) {
+                match feeder.feed(inner_context) {
                     Instruct::Unchanged => (),
                     Instruct::Changed => continue 'outer,
                     Instruct::Interrupt(interrupted) => return Some(interrupted),

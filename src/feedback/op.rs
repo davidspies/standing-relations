@@ -1,9 +1,11 @@
 mod checked_foreach;
 mod pipe;
 
-use self::{checked_foreach::CheckedForeach, pipe::Pipe};
+use self::pipe::Pipe;
 use super::context::CreationContext;
-use crate::{core, CountMap, Input, Op, Output, Relation};
+use crate::{
+    is_context::IsDynContext, tracked::TrackedChange, CountMap, Input, Op, Output, Relation,
+};
 use std::hash::Hash;
 
 pub struct Feedback<'a, C: Op>
@@ -27,8 +29,8 @@ pub struct Interrupter<C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> {
     f: F,
 }
 
-pub trait IsFeedback<'a, I> {
-    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I>;
+pub(crate) trait IsFeedback<'a, I> {
+    fn feed(&mut self, context: &dyn IsDynContext<'a>) -> Instruct<I>;
 }
 
 pub enum Instruct<I> {
@@ -41,14 +43,15 @@ impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C>
 where
     C::D: Clone + Eq + Hash + 'a,
 {
-    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
-        let m = self.output.get(context);
+    fn feed(&mut self, context: &dyn IsDynContext<'a>) -> Instruct<I> {
+        let m = self.output.get(context.core_context());
         if m.is_empty() {
             Instruct::Unchanged
         } else {
-            for (x, &count) in &*m {
-                self.input.update(context, x.clone(), count);
-            }
+            context.update_dyn(Box::new(TrackedChange {
+                input: self.input.clone(),
+                data: m.iter().map(|(x, &count)| (x.clone(), count)).collect(),
+            }));
             Instruct::Changed
         }
     }
@@ -58,15 +61,17 @@ impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C>
 where
     C::D: Clone + Eq + Hash + 'a,
 {
-    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
-        let m = self.output.get(context);
-        if m.receive()
-            .into_iter()
-            .checked_foreach(|(x, count)| self.input.update(context, x, count))
-        {
-            Instruct::Changed
-        } else {
+    fn feed(&mut self, context: &dyn IsDynContext<'a>) -> Instruct<I> {
+        let m = self.output.get(context.core_context());
+        let changes = m.receive();
+        if changes.is_empty() {
             Instruct::Unchanged
+        } else {
+            context.update_dyn(Box::new(TrackedChange {
+                input: self.input.clone(),
+                data: changes,
+            }));
+            Instruct::Changed
         }
     }
 }
@@ -74,8 +79,8 @@ where
 impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
     for Interrupter<C, M, F, I>
 {
-    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
-        let m = self.output.get(context);
+    fn feed(&mut self, context: &dyn IsDynContext<'a>) -> Instruct<I> {
+        let m = self.output.get(context.core_context());
         match (self.f)(&m) {
             None => Instruct::Unchanged,
             Some(i) => Instruct::Interrupt(i),

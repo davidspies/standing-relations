@@ -1,11 +1,11 @@
 use std::iter;
 
-use crate::{core::ExecutionContext, Input};
+use crate::{core::ExecutionContext, tracked::IsTrackedInput, Input};
 
 pub trait IsContext<'a> {
     fn commit(&mut self);
 
-    fn core_context(&mut self) -> &mut ExecutionContext<'a>;
+    fn core_context(&self) -> &ExecutionContext<'a>;
 
     fn update_to<D: Clone + 'a>(&self, input: &Input<'a, D>, x: D, count: isize) {
         self.send_all_to(input, iter::once((x, count)))
@@ -16,6 +16,8 @@ pub trait IsContext<'a> {
         input: &Input<'a, D>,
         iter: impl IntoIterator<Item = (D, isize)>,
     );
+
+    fn update_tracked(&self, tracked: impl IsTrackedInput<'a> + 'a);
 }
 
 impl<'a> IsContext<'a> for ExecutionContext<'a> {
@@ -23,7 +25,7 @@ impl<'a> IsContext<'a> for ExecutionContext<'a> {
         ExecutionContext::commit(self)
     }
 
-    fn core_context(&mut self) -> &mut ExecutionContext<'a> {
+    fn core_context(&self) -> &ExecutionContext<'a> {
         self
     }
 
@@ -37,5 +39,22 @@ impl<'a> IsContext<'a> for ExecutionContext<'a> {
         iter: impl IntoIterator<Item = (D, isize)>,
     ) {
         input.send_all(self, iter)
+    }
+
+    fn update_tracked(&self, tracked: impl IsTrackedInput<'a> + 'a) {
+        tracked.perform(self)
+    }
+}
+
+pub(crate) trait IsDynContext<'a> {
+    fn core_context(&self) -> &ExecutionContext<'a>;
+    fn update_dyn(&self, tracked: Box<dyn IsTrackedInput<'a> + 'a>);
+}
+impl<'a, T: IsContext<'a>> IsDynContext<'a> for T {
+    fn core_context(&self) -> &ExecutionContext<'a> {
+        IsContext::core_context(self)
+    }
+    fn update_dyn(&self, tracked: Box<dyn IsTrackedInput<'a> + 'a>) {
+        self.update_tracked(tracked)
     }
 }

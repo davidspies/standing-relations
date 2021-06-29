@@ -2,7 +2,7 @@ use std::cell::RefCell;
 
 use crate::{core::ExecutionContext, is_context::IsContext, Input};
 
-use super::tracker::ChangeTracker;
+use super::{tracker::ChangeTracker, IsTrackedInput};
 
 pub struct TrackedContext<'a> {
     inner: ExecutionContext<'a>,
@@ -14,8 +14,8 @@ impl<'a> IsContext<'a> for TrackedContext<'a> {
         self.inner.commit()
     }
 
-    fn core_context(&mut self) -> &mut ExecutionContext<'a> {
-        &mut self.inner
+    fn core_context(&self) -> &ExecutionContext<'a> {
+        &self.inner
     }
 
     fn send_all_to<D: Clone + 'a>(
@@ -26,6 +26,12 @@ impl<'a> IsContext<'a> for TrackedContext<'a> {
         self.tracker
             .borrow_mut()
             .update_all(&self.inner, input, data.into_iter().collect())
+    }
+
+    fn update_tracked(&self, tracked: impl IsTrackedInput<'a> + 'a) {
+        self.tracker
+            .borrow_mut()
+            .update_tracked(&self.inner, tracked)
     }
 }
 
