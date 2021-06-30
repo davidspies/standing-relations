@@ -1,9 +1,18 @@
 use crate::{Op, Op_, Relation};
-use std::{iter, ops::Neg};
+use std::{fmt::Debug, iter, ops::Neg};
 
 impl<C: Op_> Relation<C> {
     pub fn map_<Y, F: Fn(C::T) -> Y>(self, f: F) -> Relation<impl Op_<T = Y>> {
         self.flat_map_(move |x| iter::once(f(x)))
+    }
+    pub fn debug(self, name: &'static str) -> Relation<impl Op_<T = C::T>>
+    where
+        C::T: Debug,
+    {
+        self.map_(move |x| {
+            log::debug!("{}: {:?}", name, x);
+            x
+        })
     }
 }
 
