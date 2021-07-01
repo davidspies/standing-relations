@@ -1,56 +1,22 @@
 use super::op::{Instruct, IsFeedback};
-use crate::{
-    core,
-    is_context::IsContext,
-    tracked::{self, ChangeTracker, IsTrackedInput},
-    Input,
-};
-use std::{mem, ops::Deref};
+use crate::core;
+use std::ops::Deref;
 
 pub struct CreationContext<'a, I> {
     inner: core::CreationContext<'a>,
     feeders: Vec<Box<dyn IsFeedback<'a, I> + 'a>>,
 }
 
-pub struct ExecutionContext_<'a, C, I> {
-    inner: Option<C>,
+pub struct ExecutionContext<'a, I> {
+    inner: core::ExecutionContext<'a>,
     feeders: Vec<Box<dyn IsFeedback<'a, I> + 'a>>,
 }
 
-pub type ExecutionContext<'a, I> = ExecutionContext_<'a, core::ExecutionContext<'a>, I>;
-pub type TrackedContext<'a, I> = ExecutionContext_<'a, tracked::TrackedContext<'a>, I>;
-
-impl<'a, C: IsContext<'a>, I> IsContext<'a> for ExecutionContext_<'a, C, I> {
-    fn update_to<D: Clone + 'a>(&self, input: &Input<'a, D>, x: D, count: isize) {
-        self.deref().update_to(input, x, count)
-    }
-
-    fn send_all_to<D: Clone + 'a>(
-        &self,
-        input: &Input<'a, D>,
-        data: impl IntoIterator<Item = (D, isize)>,
-    ) {
-        self.deref().send_all_to(input, data)
-    }
-
-    fn commit(&mut self) {
-        self.commit();
-    }
-
-    fn core_context(&self) -> &core::ExecutionContext<'a> {
-        self.deref().core_context()
-    }
-
-    fn update_tracked(&self, tracked: impl IsTrackedInput<'a> + 'a) {
-        self.deref().update_tracked(tracked)
-    }
-}
-
-impl<'a, C: IsContext<'a>, I> ExecutionContext_<'a, C, I> {
+impl<'a, I> ExecutionContext<'a, I> {
     pub fn commit(&mut self) -> Option<I> {
         'outer: loop {
-            self.inner.as_mut().unwrap().commit();
-            let inner_context = self.inner.as_ref().unwrap();
+            self.inner.commit();
+            let inner_context = &self.inner;
             for feeder in &mut self.feeders {
                 match feeder.feed(inner_context) {
                     Instruct::Unchanged => (),
@@ -63,58 +29,6 @@ impl<'a, C: IsContext<'a>, I> ExecutionContext_<'a, C, I> {
     }
 }
 
-impl<'a, I> ExecutionContext<'a, I> {
-    pub fn with<'b>(
-        &'b mut self,
-        setup: impl FnOnce(&mut TrackedContext<'a, I>),
-    ) -> With<'b, 'a, I> {
-        let mut setup_context = ExecutionContext_ {
-            inner: Some(tracked::TrackedContext::new(
-                mem::take(&mut self.inner).unwrap(),
-            )),
-            feeders: mem::take(&mut self.feeders),
-        };
-        setup(&mut setup_context);
-        let interrupted_in_setup = setup_context.commit();
-        let (inner, tracker) = setup_context.inner.unwrap().pieces();
-        self.inner = Some(inner);
-        self.feeders = setup_context.feeders;
-        With(Some(WithInner {
-            context: self,
-            interrupted_in_setup,
-            tracker,
-        }))
-    }
-}
-
-pub struct WithInner<'b, 'a, I> {
-    context: &'b mut ExecutionContext<'a, I>,
-    interrupted_in_setup: Option<I>,
-    tracker: ChangeTracker<'a>,
-}
-
-pub struct With<'b, 'a, I>(Option<WithInner<'b, 'a, I>>);
-
-impl<I> Drop for With<'_, '_, I> {
-    fn drop(&mut self) {
-        self.0.take().map(|inner| inner.go(|_, _| ()));
-    }
-}
-
-impl<'a, I> With<'_, 'a, I> {
-    pub fn go<R>(mut self, body: impl FnOnce(&mut ExecutionContext<'a, I>, Option<I>) -> R) -> R {
-        self.0.take().unwrap().go(body)
-    }
-}
-
-impl<'a, I> WithInner<'_, 'a, I> {
-    fn go<R>(self, body: impl FnOnce(&mut ExecutionContext<'a, I>, Option<I>) -> R) -> R {
-        let result = body(self.context, self.interrupted_in_setup);
-        self.tracker.undo(self.context.inner.as_ref().unwrap());
-        result
-    }
-}
-
 impl<'a, I> CreationContext<'a, I> {
     pub fn new_() -> Self {
         CreationContext {
@@ -124,7 +38,7 @@ impl<'a, I> CreationContext<'a, I> {
     }
     pub fn begin(self) -> ExecutionContext<'a, I> {
         ExecutionContext {
-            inner: Some(self.inner.begin()),
+            inner: self.inner.begin(),
             feeders: self.feeders,
         }
     }
@@ -141,10 +55,10 @@ impl<'a, I> Deref for CreationContext<'a, I> {
     }
 }
 
-impl<'a, C, I> Deref for ExecutionContext_<'a, C, I> {
-    type Target = C;
+impl<'a, I> Deref for ExecutionContext<'a, I> {
+    type Target = core::ExecutionContext<'a>;
 
-    fn deref(&self) -> &C {
-        self.inner.as_ref().unwrap()
+    fn deref(&self) -> &core::ExecutionContext<'a> {
+        &self.inner
     }
 }

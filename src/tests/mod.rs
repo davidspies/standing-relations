@@ -30,26 +30,3 @@ fn it_works() {
         &HashMap::from_iter(vec![('a', 4), ('b', 2)])
     );
 }
-
-#[test]
-fn undo_feedback_changes() {
-    let mut context = CreationContext::new();
-    let (inp1, rel1) = context.new_input::<char>();
-    let (inp2, rel2) = context.new_input::<char>();
-    let rel2 = rel2.save();
-    context.feed(rel1.set_minus(rel2.get()).get_output(&context), inp2);
-    let output = rel2.get().get_output(&context);
-
-    let mut context = context.begin();
-    context
-        .with(|context| inp1.add(context, 'a'))
-        .go(|context, conflict| {
-            assert_eq!(conflict, None);
-            assert_eq!(
-                &*output.get(&context),
-                &vec![('a', 1)].into_iter().collect()
-            );
-        });
-    context.commit();
-    assert_eq!(&*output.get(&context), &HashMap::new());
-}

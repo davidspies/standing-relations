@@ -3,9 +3,7 @@ mod pipe;
 
 use self::pipe::Pipe;
 use super::context::CreationContext;
-use crate::{
-    is_context::IsDynContext, tracked::TrackedChange, CountMap, Input, Op, Output, Relation,
-};
+use crate::{core, CountMap, Input, Op, Output, Relation};
 use std::hash::Hash;
 
 pub struct Feedback<'a, C: Op>
@@ -30,7 +28,7 @@ pub struct Interrupter<C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> {
 }
 
 pub(crate) trait IsFeedback<'a, I> {
-    fn feed(&mut self, context: &dyn IsDynContext<'a>) -> Instruct<I>;
+    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I>;
 }
 
 pub enum Instruct<I> {
@@ -43,15 +41,13 @@ impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C>
 where
     C::D: Clone + Eq + Hash + 'a,
 {
-    fn feed(&mut self, context: &dyn IsDynContext<'a>) -> Instruct<I> {
-        let m = self.output.get(context.core_context());
+    fn feed(&mut self, context: &core::ExecutionContext) -> Instruct<I> {
+        let m = self.output.get(context);
         if m.is_empty() {
             Instruct::Unchanged
         } else {
-            context.update_dyn(Box::new(TrackedChange {
-                input: self.input.clone(),
-                data: m.iter().map(|(x, &count)| (x.clone(), count)).collect(),
-            }));
+            self.input
+                .send_all(context, m.iter().map(|(x, &count)| (x.clone(), count)));
             Instruct::Changed
         }
     }
@@ -61,16 +57,13 @@ impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C>
 where
     C::D: Clone + Eq + Hash + 'a,
 {
-    fn feed(&mut self, context: &dyn IsDynContext<'a>) -> Instruct<I> {
-        let m = self.output.get(context.core_context());
+    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
+        let m = self.output.get(context);
         let changes = m.receive();
         if changes.is_empty() {
             Instruct::Unchanged
         } else {
-            context.update_dyn(Box::new(TrackedChange {
-                input: self.input.clone(),
-                data: changes,
-            }));
+            self.input.send_all(context, changes);
             Instruct::Changed
         }
     }
@@ -79,8 +72,8 @@ where
 impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
     for Interrupter<C, M, F, I>
 {
-    fn feed(&mut self, context: &dyn IsDynContext<'a>) -> Instruct<I> {
-        let m = self.output.get(context.core_context());
+    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
+        let m = self.output.get(context);
         match (self.f)(&m) {
             None => Instruct::Unchanged,
             Some(i) => Instruct::Interrupt(i),
