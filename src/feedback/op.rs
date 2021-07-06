@@ -14,10 +14,7 @@ where
     input: Input<'a, C::D>,
 }
 
-pub struct FeedbackOnce<'a, C: Op>
-where
-    C::D: Eq + Hash,
-{
+pub struct FeedbackOnce<'a, C: Op> {
     output: Output<C::D, C, Pipe<(C::D, isize)>>,
     input: Input<'a, C::D>,
 }
@@ -53,10 +50,7 @@ where
     }
 }
 
-impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C>
-where
-    C::D: Eq + Hash,
-{
+impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C> {
     fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
         let changes = m.receive();
@@ -89,10 +83,7 @@ impl<'a, I> CreationContext<'a, I> {
     ) {
         self.add_feeder(Feedback { output, input })
     }
-    pub fn feed_once<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>)
-    where
-        C::D: Eq + Hash,
-    {
+    pub fn feed_once<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>) {
         self.add_feeder(FeedbackOnce {
             output: rel.get_output_(&self),
             input,
