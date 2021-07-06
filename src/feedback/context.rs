@@ -25,9 +25,8 @@ impl<'a, I> ExecutionContext<'a, I> {
     pub fn commit(&mut self) -> Option<I> {
         loop {
             self.inner.commit();
-            let inner_context = &self.inner;
             match self.dirty.pop_min() {
-                Some(feeder_index) => match self.feeders[feeder_index].feed(inner_context) {
+                Some(feeder_index) => match self.feeders[feeder_index].feed(&self.inner) {
                     Instruct::Unchanged => (),
                     Instruct::Changed => self.dirty.insert(feeder_index),
                     Instruct::Interrupt(interrupted) => return Some(interrupted),
