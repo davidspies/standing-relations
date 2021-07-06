@@ -23,10 +23,30 @@ fn it_works() {
     inp.add(&context, 'a');
     inp.add(&context, 'b');
     inp.remove(&context, 'b');
-    assert_eq!(&*outp.get(&context), &HashMap::new());
+    assert_eq!(&*outp.get(&context), &HashMap::from_iter(vec![]));
     context.commit();
     assert_eq!(
         &*outp.get(&context),
         &HashMap::from_iter(vec![('a', 4), ('b', 2)])
     );
+}
+
+#[test]
+fn feed_ordered() {
+    let mut context = CreationContext::new();
+    let (inp, rel) = context.new_input::<((), usize)>();
+    let rel = rel.group_min().save();
+    let outp = rel.get().get_output(&context);
+    context.feed_ordered(rel.get().map(|(c, i)| (i, (c, i + 1))), inp.clone());
+
+    let mut context = context.begin();
+    inp.add(&context, ((), 0));
+    context.commit();
+    assert_eq!(
+        &*outp.get(&context),
+        &HashMap::from_iter(vec![(((), 0), 1)])
+    );
+    inp.remove(&context, ((), 0));
+    context.commit();
+    assert_eq!(&*outp.get(&context), &HashMap::from_iter(vec![]));
 }
