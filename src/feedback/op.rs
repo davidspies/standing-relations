@@ -29,8 +29,12 @@ pub struct Interrupter<C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> {
     f: F,
 }
 
-pub(crate) trait IsFeedback<'a, I> {
+pub(crate) trait IsFeeder<'a, I> {
     fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I>;
+}
+
+pub(crate) trait IsFeedback<'a, I>: IsFeeder<'a, I> {
+    fn add_listener(&mut self, context: &core::CreationContext, f: impl FnMut() + 'static);
 }
 
 pub enum Instruct<I> {
@@ -39,7 +43,7 @@ pub enum Instruct<I> {
     Interrupt(I),
 }
 
-impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C>
+impl<'a, C: Op, I> IsFeeder<'a, I> for Feedback<'a, C>
 where
     C::D: Clone + Eq + Hash + 'a,
 {
@@ -55,7 +59,16 @@ where
     }
 }
 
-impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C> {
+impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C>
+where
+    C::D: Clone + Eq + Hash + 'a,
+{
+    fn add_listener(&mut self, context: &core::CreationContext, f: impl FnMut() + 'static) {
+        self.output.add_listener(context, f);
+    }
+}
+
+impl<'a, C: Op, I> IsFeeder<'a, I> for FeedbackOnce<'a, C> {
     fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
         let changes = m.receive();
@@ -68,7 +81,13 @@ impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C> {
     }
 }
 
-impl<'a, K: Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeedback<'a, I>
+impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C> {
+    fn add_listener(&mut self, context: &core::CreationContext, f: impl FnMut() + 'static) {
+        self.output.add_listener(context, f);
+    }
+}
+
+impl<'a, K: Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeeder<'a, I>
     for FeedbackOrdered<'a, K, V, C>
 {
     fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
@@ -83,7 +102,15 @@ impl<'a, K: Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeedback<'a, I>
     }
 }
 
-impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
+impl<'a, K: Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeedback<'a, I>
+    for FeedbackOrdered<'a, K, V, C>
+{
+    fn add_listener(&mut self, context: &core::CreationContext, f: impl FnMut() + 'static) {
+        self.output.add_listener(context, f);
+    }
+}
+
+impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeeder<'a, I>
     for Interrupter<C, M, F, I>
 {
     fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
@@ -92,6 +119,13 @@ impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
             None => Instruct::Unchanged,
             Some(i) => Instruct::Interrupt(i),
         }
+    }
+}
+impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
+    for Interrupter<C, M, F, I>
+{
+    fn add_listener(&mut self, context: &core::CreationContext, f: impl FnMut() + 'static) {
+        self.output.add_listener(context, f);
     }
 }
 

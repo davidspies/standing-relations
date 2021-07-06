@@ -37,4 +37,8 @@ impl<C: Op, M: CountMap<C::D>> Output<C::D, C, M> {
         }
         self.data.borrow()
     }
+    pub fn add_listener(&mut self, context: &CreationContext<'_>, f: impl FnMut() + 'static) {
+        assert_eq!(self.context_id, context.get_id(), "Context mismatch");
+        self.dirty.add_listener(f)
+    }
 }

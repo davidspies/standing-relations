@@ -11,6 +11,7 @@ struct SendNode(Option<Rc<RefCell<Node>>>);
 struct Node {
     dirty: bool,
     targets: RcCollection<RefCell<Node>>,
+    on_dirty: Vec<Box<dyn FnMut()>>,
 }
 
 trait IsNode {
@@ -43,6 +44,7 @@ impl ReceiveBuilder {
         let result = Rc::new(RefCell::new(Node {
             dirty: false,
             targets: RcCollection::new(),
+            on_dirty: Vec::new(),
         }));
         for t in self.0 {
             t.borrow_mut().add_target(Rc::clone(&result));
@@ -69,11 +71,20 @@ impl DirtyReceive {
         }
         dirty
     }
+    pub fn add_listener(&mut self, f: impl FnMut() + 'static) {
+        self.0.borrow_mut().on_dirty.push(Box::new(f));
+    }
 }
 
 fn set_dirty_inner(this: &Rc<RefCell<Node>>) {
     if !this.borrow().dirty {
-        this.borrow_mut().dirty = true;
+        {
+            let mut borrowed_mut = this.borrow_mut();
+            borrowed_mut.dirty = true;
+            for f in &mut borrowed_mut.on_dirty {
+                f()
+            }
+        }
         for target in &this.borrow().targets {
             set_dirty_inner(target);
         }
