@@ -55,7 +55,7 @@ where
 
 impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C>
 where
-    C::D: Clone + Eq + Hash + 'a,
+    C::D: Eq + Hash,
 {
     fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
@@ -91,7 +91,7 @@ impl<'a, I> CreationContext<'a, I> {
     }
     pub fn feed_once<C: Op + 'a>(&mut self, rel: Relation<C>, input: Input<'a, C::D>)
     where
-        C::D: Clone + Eq + Hash + 'a,
+        C::D: Eq + Hash,
     {
         self.add_feeder(FeedbackOnce {
             output: rel.get_output_(&self),
