@@ -130,6 +130,13 @@ impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
 }
 
 impl<'a, I> CreationContext<'a, I> {
+    /// Feed the output of one relation into the input of another.
+    ///
+    /// When calling `context.commit`, anything in the output will be dumped into the input
+    /// and this operation will repeat
+    /// until the output is empty. Therefore, in order to ensure that the `commit` operation halts,
+    /// it is the caller's responsibility to structure the relation in such a way that there is
+    /// a negative feedback loop between the arguments.
     pub fn feed<D: Clone + Eq + Hash + 'a>(
         &mut self,
         output: Output<D, impl Op<D = D> + 'a>,
@@ -137,12 +144,28 @@ impl<'a, I> CreationContext<'a, I> {
     ) {
         self.add_feeder(Feedback { output, input })
     }
+
+    /// Connect a relation directly into an input without consolidating.
+    ///
+    /// Whereas `feed` feeds the collection _output_ into the input every time `commit` is called,
+    /// `feed_once` feeds the _changes_ to the collection into the input every time `commit` is
+    /// called. This operation will repeat until the collection stops changing.
+    /// Like with `feed`, it is the caller's responsibility to structure things in such a way that
+    /// `commit` calls will halt.
     pub fn feed_once<D>(&mut self, rel: Relation<impl Op<D = D> + 'a>, input: Input<'a, D>) {
         self.add_feeder(FeedbackOnce {
             output: rel.get_output_(&self),
             input,
         })
     }
+
+    /// `feed_ordered` is like `feed_once`, but has an ordering key to help ensure `commit` halts.
+    ///
+    /// Upon calling `commit`, only the changes with the lowest key will be fed back into the input.
+    /// These are allowed to propagate through the system before feeding any more changes in.
+    /// If any remaining pending changes are cancelled out (in a delta=0 sense) by this, then
+    /// they will never be fed in.
+    /// Like with `feed_once`, this repeats until the collection stops changing.
     pub fn feed_ordered<K: Ord + 'a, V: Eq + Hash + 'a>(
         &mut self,
         rel: Relation<impl Op<D = (K, V)> + 'a>,

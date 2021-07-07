@@ -8,10 +8,13 @@ impl<C: Op> Relation<C>
 where
     C::D: Clone + Eq + Hash,
 {
+    pub fn counts(
+        self,
+    ) -> Relation<impl IsReduce<T = ((C::D, isize), isize), OM = HashMap<C::D, isize>>> {
+        self.map(|x| (x, ())).reduce_(|_, &n| n)
+    }
     pub fn distinct(self) -> Relation<impl Op<D = C::D>> {
-        self.map(|x| (x, ()))
-            .reduce_(|_, _: &isize| ())
-            .map(|(x, ())| x)
+        self.counts().map(|(x, _)| x)
     }
 }
 

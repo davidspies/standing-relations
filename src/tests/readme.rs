@@ -1,3 +1,5 @@
+use std::{collections::HashMap, iter::FromIterator};
+
 use crate::{CreationContext, Output};
 
 #[test]
@@ -26,9 +28,7 @@ fn readme() {
 
     assert_eq!(
         &*arrangement.get(&context),
-        &vec![(('H', 5), 1), (('b', 11), 1), (('w', 5), 1)]
-            .into_iter()
-            .collect()
+        &HashMap::from_iter(vec![(('H', 5), 1), (('b', 11), 1), (('w', 5), 1)])
     );
 
     input1.remove(&context, ('b', 6));
@@ -37,8 +37,11 @@ fn readme() {
 
     assert_eq!(
         &*arrangement.get(&context),
-        &vec![(('G', 7), 1), (('H', 5), 1), (('a', 12), 1), (('w', 5), 1)]
-            .into_iter()
-            .collect()
+        &HashMap::from_iter(vec![
+            (('G', 7), 1),
+            (('H', 5), 1),
+            (('a', 12), 1),
+            (('w', 5), 1)
+        ])
     );
 }
