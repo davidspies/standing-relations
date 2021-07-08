@@ -103,4 +103,24 @@ where relational outputs feed back into inputs until all collections stabilize. 
 loop in this way, use one of the three `CreationContext::feed`, `CreationContext::feed_ordered`, or
 `CreationContext::feed_while` methods.
 
-TODO Explain these
+`CreationContext::feed` connects a `Relation` to an `Input` such that whenever
+`ExecutionContext::commit` is called, any changes to the collection represented by the `Relation`
+argument are fed back into the `Input` argument. This repeats until the collection stops changing.
+
+`CreationContext::feed_ordered` is similar to `feed` except that the `Relation` argument
+additionally has an ordering key. Rather than feeding _all_ changes back into the `Input`, only
+those with the minimum present ordering key are fed back in. If any later changes are cancelled
+out as a result of this (if their count goes to zero), then they will not be fed in at all.
+This can be handy in situations where using `feed` can cause an infinite loop.
+
+`CreationContext::feed_while` takes an `Output` as an argument rather than a `Relation` and rather
+than propagating _changes_ to it's argument through will instead send the entire contents of that
+`Output` on every visit. `feed_while` is intended to be used in circumstances where there exists
+a negative feedback loop between the arguments and the caller wants to retain any visited values
+rather than have them be immediately deleted.
+
+If there are multiple calls to `feed`, `feed_ordered`, or `feed_while`, earlier calls take higher
+priority. Higher priority feedbacks will run to completion before any lower priority
+ones are touched.
+
+TODO Example

@@ -130,28 +130,9 @@ impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
 }
 
 impl<'a, I> CreationContext<'a, I> {
-    /// Feed the output of one relation into the input of another.
-    ///
-    /// When calling `context.commit`, anything in the output will be dumped into the input
-    /// and this operation will repeat
-    /// until the output is empty. Therefore, in order to ensure that the `commit` operation halts,
-    /// it is the caller's responsibility to structure the relation in such a way that there is
-    /// a negative feedback loop between the arguments.
-    pub fn feed_while<D: Clone + Eq + Hash + 'a>(
-        &mut self,
-        output: Output<D, impl Op<D = D> + 'a>,
-        input: Input<'a, D>,
-    ) {
-        self.add_feeder(Feedback { output, input })
-    }
-
-    /// Connect a relation directly into an input without consolidating.
-    ///
-    /// Whereas `feed_while` feeds the collection _output_ into the input every time `commit` is
-    /// called, `feed` feeds the _changes_ to the collection into the input every time `commit` is
-    /// called. This operation will repeat until the collection stops changing.
-    /// Like with `feed_while`, it is the caller's responsibility to structure things in such a way
-    /// that `commit` calls will halt.
+    /// Connects a `Relation` to an `Input` such that whenever `ExecutionContext::commit` is called,
+    /// any changes to the collection represented by the `Relation` argument are fed back into the
+    /// `Input` argument. This repeats until the collection stops changing.
     pub fn feed<D>(&mut self, rel: Relation<impl Op<D = D> + 'a>, input: Input<'a, D>) {
         self.add_feeder(FeedbackOnce {
             output: rel.get_output_(&self),
@@ -159,13 +140,11 @@ impl<'a, I> CreationContext<'a, I> {
         })
     }
 
-    /// `feed_ordered` is like `feed`, but has an ordering key to help ensure `commit` halts.
-    ///
-    /// Upon calling `commit`, only the changes with the lowest key will be fed back into the input.
-    /// These are allowed to propagate through the system before feeding any more changes in.
-    /// If any remaining pending changes are cancelled out (in a delta=0 sense) by this, then
-    /// they will never be fed in.
-    /// Like with `feed`, this repeats until the collection stops changing.
+    /// Similar to `feed` except that the `Relation` argument
+    /// additionally has an ordering key. Rather than feeding _all_ changes back into the `Input`, only
+    /// those with the minimum present ordering key are fed back in. If any later changes are cancelled
+    /// out as a result of this (if their count goes to zero), then they will not be fed in at all.
+    /// This can be handy in situations where using `feed` can cause an infinite loop.
     pub fn feed_ordered<K: Ord + 'a, V: Eq + Hash + 'a>(
         &mut self,
         rel: Relation<impl Op<D = (K, V)> + 'a>,
@@ -184,5 +163,18 @@ impl<'a, I> CreationContext<'a, I> {
         I: 'a,
     {
         self.add_feeder(Interrupter { output, f })
+    }
+
+    /// Takes an `Output` as an argument rather than a `Relation` and rather
+    /// than propagating _changes_ to it's argument through will instead send the entire contents of that
+    /// `Output` on every visit. `feed_while` is intended to be used in circumstances where there exists
+    /// a negative feedback loop between the arguments and the caller wants to retain any visited values
+    /// rather than have them be immediately deleted.
+    pub fn feed_while<D: Clone + Eq + Hash + 'a>(
+        &mut self,
+        output: Output<D, impl Op<D = D> + 'a>,
+        input: Input<'a, D>,
+    ) {
+        self.add_feeder(Feedback { output, input })
     }
 }
