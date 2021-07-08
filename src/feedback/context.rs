@@ -18,7 +18,7 @@ pub struct CreationContext<'a, I> {
 pub struct ExecutionContext<'a, I> {
     inner: core::ExecutionContext<'a>,
     feeders: Vec<Box<dyn IsFeeder<'a, I> + 'a>>,
-    dirty: PQReceiver<usize>,
+    dirty: PQReceiver,
 }
 
 impl<'a, I> ExecutionContext<'a, I> {

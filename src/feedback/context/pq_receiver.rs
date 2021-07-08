@@ -1,24 +1,24 @@
-use std::collections::BTreeSet;
-
 use crate::pipes::Receiver;
+use std::{cmp::Reverse, collections::BinaryHeap};
 
-pub struct PQReceiver<T: Ord> {
-    receiver: Receiver<T>,
-    pending: BTreeSet<T>,
+pub struct PQReceiver {
+    receiver: Receiver<usize>,
+    pending: BinaryHeap<Reverse<usize>>,
 }
 
-impl<T: Ord> PQReceiver<T> {
-    pub fn new(receiver: Receiver<T>) -> Self {
+impl PQReceiver {
+    pub fn new(receiver: Receiver<usize>) -> Self {
         PQReceiver {
             receiver,
-            pending: BTreeSet::new(),
+            pending: BinaryHeap::new(),
         }
     }
-    pub fn insert(&mut self, x: T) {
-        self.pending.insert(x);
+    pub fn insert(&mut self, x: usize) {
+        self.pending.push(Reverse(x));
     }
-    pub fn pop_min(&mut self) -> Option<T> {
-        self.pending.extend(self.receiver.receive());
-        self.pending.pop_first()
+    pub fn pop_min(&mut self) -> Option<usize> {
+        self.pending
+            .extend(self.receiver.receive().into_iter().map(Reverse));
+        self.pending.pop().map(|Reverse(x)| x)
     }
 }
