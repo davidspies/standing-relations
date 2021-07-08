@@ -14,7 +14,7 @@ fn dijkstra<'a, Node: Eq + Hash + Clone + 'a>(
     let (dists_input, dists) = context.new_input::<(Node, u64)>();
     let dists = dists.save();
     context.feed(starts_c.map(|x| (x, 0)), dists_input.clone());
-    context.interrupt_nonempty(dists.get().semijoin(ends_c).get_output(&context), |m| {
+    context.interrupt(dists.get().semijoin(ends_c).get_output(&context), |m| {
         m.keys().next().unwrap().1
     });
     context.feed_ordered(

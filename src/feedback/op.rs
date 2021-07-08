@@ -3,7 +3,7 @@ mod pipe;
 
 use self::pipe::{OrderedPipe, Pipe};
 use super::context::CreationContext;
-use crate::{core, CountMap, Input, Op, Output, Relation};
+use crate::{core, CountMap, Input, Observable, Op, Output, Relation};
 use std::hash::Hash;
 
 pub struct Feedback<'a, C: Op>
@@ -110,18 +110,21 @@ impl<'a, K: Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeedback<'a, I>
     }
 }
 
-impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeeder<'a, I>
+impl<'a, C: Op, M: CountMap<C::D> + Observable, F: Fn(&M) -> Option<I>, I> IsFeeder<'a, I>
     for Interrupter<C, M, F, I>
 {
     fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
+        if m.is_empty() {
+            return Instruct::Unchanged;
+        }
         match (self.f)(&m) {
             None => Instruct::Unchanged,
             Some(i) => Instruct::Interrupt(i),
         }
     }
 }
-impl<'a, C: Op, M: CountMap<C::D>, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
+impl<'a, C: Op, M: CountMap<C::D> + Observable, F: Fn(&M) -> Option<I>, I> IsFeedback<'a, I>
     for Interrupter<C, M, F, I>
 {
     fn add_listener(&mut self, context: &core::CreationContext, f: impl FnMut() + 'static) {
@@ -155,7 +158,7 @@ impl<'a, I> CreationContext<'a, I> {
             input,
         })
     }
-    pub fn interrupt_<D, M: CountMap<D> + 'a>(
+    pub fn interrupt_<D, M: CountMap<D> + Observable + 'a>(
         &mut self,
         output: Output<D, impl Op<D = D> + 'a, M>,
         f: impl Fn(&M) -> Option<I> + 'a,

@@ -5,19 +5,9 @@ impl<'a, I: 'a> CreationContext<'a, I> {
     pub fn interrupt<D: Eq + Hash + 'a>(
         &mut self,
         output: Output<D, impl Op<D = D> + 'a>,
-        f: impl Fn(&HashMap<D, isize>) -> Option<I> + 'a,
-    ) {
-        self.interrupt_(output, f)
-    }
-    pub fn interrupt_nonempty<D: Eq + Hash + 'a>(
-        &mut self,
-        output: Output<D, impl Op<D = D> + 'a>,
         f: impl Fn(&HashMap<D, isize>) -> I + 'a,
     ) {
-        self.interrupt(
-            output,
-            move |m| if m.is_empty() { None } else { Some(f(m)) },
-        )
+        self.interrupt_(output, move |m| Some(f(m)))
     }
 }
 
