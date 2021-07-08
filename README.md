@@ -119,8 +119,12 @@ than propagating _changes_ to it's argument through will instead send the entire
 a negative feedback loop between the arguments and the caller wants to retain any visited values
 rather than have them be immediately deleted.
 
-If there are multiple calls to `feed`, `feed_ordered`, or `feed_while`, earlier calls take higher
-priority. Higher priority feedbacks will run to completion before any lower priority
+`CreationContext::interrupt` takes an `Output` to monitor. Calls to `commit` upon discovering that
+the `Output` is non-empty will immediately stop running and apply the supplied continuation.
+If a call to `commit` returns a `Some`, that serves as an indicator that this has happened.
+
+If there are multiple calls to `feed`, `feed_ordered`, `feed_while`, or `interrupt`, earlier calls
+take higher priority. Higher priority feedbacks will run to completion before any lower priority
 ones are touched.
 
-TODO Example
+For an example, see [dijkstra.rs](src/tests/dijkstra.rs)

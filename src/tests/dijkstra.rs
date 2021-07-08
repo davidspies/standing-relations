@@ -7,20 +7,30 @@ fn dijkstra<'a, Node: Eq + Hash + Clone + 'a>(
     edges: impl IntoIterator<Item = (Node, Node, u64)>,
 ) -> Option<u64> {
     let mut context = CreationContext::new_();
-    let (start_inp, starts_c) = context.new_input::<Node>();
-    let (end_inp, ends_c) = context.new_input::<Node>();
-    let (edge_inp, edges_c) = context.new_input::<(Node, Node, u64)>();
+    // A relation containing a single element: the start node
+    let (start_inp, start_relation) = context.new_input::<Node>();
+    // A relation containing a single element: the end node
+    let (end_inp, end_relation) = context.new_input::<Node>();
+    let (edge_inp, edge_relation) = context.new_input::<(Node, Node, u64)>();
 
     let (dists_input, dists) = context.new_input::<(Node, u64)>();
     let dists = dists.save();
-    context.feed(starts_c.map(|x| (x, 0)), dists_input.clone());
-    context.interrupt(dists.get().semijoin(ends_c).get_output(&context), |m| {
+    // The start node has distance 0
+    context.feed(start_relation.map(|x| (x, 0)), dists_input.clone());
+    // Stop as soon as the distance collection contains the end node
+    context.interrupt(dists.get().semijoin(end_relation).get_output(&context), |m| {
         m.keys().next().unwrap().1
     });
+    // Discover new connections via a `Relation::join` and feed them back in. Lower distances take
+    // priority over higher ones.
+    // Note that if we change this from `feed_ordered` to `feed`, this will become to a
+    // breadth-first search and not necessarily find the lowest-weight path. This could be rectified
+    // by moving the `interrupt` call to come after all the `feed` calls giving it lower priority,
+    // but that would force the entire graph to be discovered before any answer can be returned. 
     context.feed_ordered(
         dists
             .get()
-            .join(edges_c.map(|(from, to, dist)| (from, (to, dist))))
+            .join(edge_relation.map(|(from, to, dist)| (from, (to, dist))))
             .map(|(_, dfrom, (to, dist))| (to, dfrom + dist))
             .group_min()
             .map(|(x, dist)| (dist, (x, dist))),
