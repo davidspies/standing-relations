@@ -29,10 +29,10 @@ pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
     let pos_children = pos_children.collect();
     let next_positions = pos_children.get().map(|(_, c)| c);
 
-    context.feed_once(next_positions, position_inp.clone());
+    context.feed(next_positions, position_inp.clone());
 
     let (outcome_inp, outcomes) = context.new_input();
-    context.feed_once(starting_values, outcome_inp.clone());
+    context.feed(starting_values, outcome_inp.clone());
 
     let child_outcomes = pos_children
         .get()
@@ -49,7 +49,7 @@ pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
         .probe(&context);
     let nonterminal_outcomes = output_probe.get_relation();
 
-    context.feed_once(
+    context.feed(
         nonterminal_outcomes.flat_map_(|((x, o), count)| {
             if &o == &draw {
                 Vec::new()

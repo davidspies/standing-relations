@@ -137,7 +137,7 @@ impl<'a, I> CreationContext<'a, I> {
     /// until the output is empty. Therefore, in order to ensure that the `commit` operation halts,
     /// it is the caller's responsibility to structure the relation in such a way that there is
     /// a negative feedback loop between the arguments.
-    pub fn feed<D: Clone + Eq + Hash + 'a>(
+    pub fn feed_while<D: Clone + Eq + Hash + 'a>(
         &mut self,
         output: Output<D, impl Op<D = D> + 'a>,
         input: Input<'a, D>,
@@ -147,25 +147,25 @@ impl<'a, I> CreationContext<'a, I> {
 
     /// Connect a relation directly into an input without consolidating.
     ///
-    /// Whereas `feed` feeds the collection _output_ into the input every time `commit` is called,
-    /// `feed_once` feeds the _changes_ to the collection into the input every time `commit` is
+    /// Whereas `feed_while` feeds the collection _output_ into the input every time `commit` is
+    /// called, `feed` feeds the _changes_ to the collection into the input every time `commit` is
     /// called. This operation will repeat until the collection stops changing.
-    /// Like with `feed`, it is the caller's responsibility to structure things in such a way that
-    /// `commit` calls will halt.
-    pub fn feed_once<D>(&mut self, rel: Relation<impl Op<D = D> + 'a>, input: Input<'a, D>) {
+    /// Like with `feed_while`, it is the caller's responsibility to structure things in such a way
+    /// that `commit` calls will halt.
+    pub fn feed<D>(&mut self, rel: Relation<impl Op<D = D> + 'a>, input: Input<'a, D>) {
         self.add_feeder(FeedbackOnce {
             output: rel.get_output_(&self),
             input,
         })
     }
 
-    /// `feed_ordered` is like `feed_once`, but has an ordering key to help ensure `commit` halts.
+    /// `feed_ordered` is like `feed`, but has an ordering key to help ensure `commit` halts.
     ///
     /// Upon calling `commit`, only the changes with the lowest key will be fed back into the input.
     /// These are allowed to propagate through the system before feeding any more changes in.
     /// If any remaining pending changes are cancelled out (in a delta=0 sense) by this, then
     /// they will never be fed in.
-    /// Like with `feed_once`, this repeats until the collection stops changing.
+    /// Like with `feed`, this repeats until the collection stops changing.
     pub fn feed_ordered<K: Ord + 'a, V: Eq + Hash + 'a>(
         &mut self,
         rel: Relation<impl Op<D = (K, V)> + 'a>,

@@ -100,7 +100,7 @@ the message "Context mismatch".
 ## Feedback Operators
 In addition to creating acyclic relational graphs, it is also possible to create _cyclic_ graphs
 where relational outputs feed back into inputs until all collections stabilize. To create a feedback
-loop in this way, use one of the three `CreationContext::feed`, `CreationContext::feed_once`, or
-`CreationContext::feed_ordered` methods.
+loop in this way, use one of the three `CreationContext::feed`, `CreationContext::feed_ordered`, or
+`CreationContext::feed_while` methods.
 
 TODO Explain these
