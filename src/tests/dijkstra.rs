@@ -17,7 +17,7 @@ fn dijkstra<'a, Node: Eq + Hash + Clone + 'a>(
     let dists = dists.save();
     // The start node has distance 0
     context.feed(start_relation.map(|x| (x, 0)), dists_input.clone());
-    // Stop as soon as the distance collection contains the end node
+    // Stop as soon as the dists collection contains the end node
     context.interrupt(dists.get().semijoin(end_relation).get_output(&context), |m| {
         m.keys().next().unwrap().1
     });
