@@ -6,6 +6,7 @@ pub mod map;
 pub mod reduce;
 pub mod save;
 pub mod split;
+pub mod triangles;
 
 pub trait Op_ {
     type T;

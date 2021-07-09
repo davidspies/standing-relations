@@ -2,6 +2,7 @@ mod context;
 mod count_map;
 mod dirty;
 mod flat_iter;
+mod mborrowed;
 mod op;
 mod output;
 pub mod pipes;

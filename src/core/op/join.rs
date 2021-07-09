@@ -1,4 +1,4 @@
-use crate::core::{flat_iter::IntoFlatIterator, CountMap, Op, Op_, Relation};
+use crate::core::{mborrowed::OrOwnedDefault, CountMap, Op, Op_, Relation};
 use std::{collections::HashMap, hash::Hash};
 
 pub struct Join<K, V1, V2, C1: Op<D = (K, V1)>, C2: Op<D = (K, V2)>> {
@@ -26,13 +26,13 @@ impl<
             right_map,
         } = self;
         left.foreach(|((k, x), x_count)| {
-            for (y, y_count) in right_map.get(&k).into_flat_iter() {
+            for (y, y_count) in &*right_map.get(&k).or_owned_default() {
                 continuation(((k.clone(), x.clone(), y.clone()), x_count * y_count));
             }
             left_map.add((k, x), x_count);
         });
         right.foreach(|((k, y), y_count)| {
-            for (x, x_count) in left_map.get(&k).into_flat_iter() {
+            for (x, x_count) in &*left_map.get(&k).or_owned_default() {
                 continuation(((k.clone(), x.clone(), y.clone()), x_count * y_count));
             }
             right_map.add((k, y), y_count);
@@ -69,11 +69,11 @@ impl<K: Eq + Hash + Clone, V: Eq + Hash + Clone, C1: Op<D = (K, V)>, C2: Op<D = 
             if y_count != 0 {
                 let old_count = right_map.get(&k).map(Clone::clone).unwrap_or(0);
                 if old_count == -y_count {
-                    for (x, &x_count) in left_map.get(&k).into_flat_iter() {
+                    for (x, &x_count) in &*left_map.get(&k).or_owned_default() {
                         continuation(((k.clone(), x.clone()), x_count));
                     }
                 } else if old_count == 0 {
-                    for (x, &x_count) in left_map.get(&k).into_flat_iter() {
+                    for (x, &x_count) in &*left_map.get(&k).or_owned_default() {
                         continuation(((k.clone(), x.clone()), -x_count));
                     }
                 }
