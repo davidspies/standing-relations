@@ -2,7 +2,10 @@ mod bimap;
 mod intersection;
 
 use self::bimap::BiMap;
-use crate::core::{op::triangles::intersection::Intersectable, CountMap, Op, Op_};
+use crate::{
+    core::{op::triangles::intersection::Intersectable, CountMap, Op, Op_},
+    Relation,
+};
 use std::hash::Hash;
 
 pub struct Triangles<X, Y, Z, C1: Op<D = (X, Y)>, C2: Op<D = (X, Z)>, C3: Op<D = (Y, Z)>> {
@@ -53,5 +56,28 @@ impl<
             }
             mapyz.add((y, z), count);
         });
+    }
+}
+
+impl<X: Clone + Eq + Hash, Y: Clone + Eq + Hash, C1: Op<D = (X, Y)>> Relation<C1> {
+    pub fn triangles<Z: Clone + Eq + Hash, C2: Op<D = (X, Z)>, C3: Op<D = (Y, Z)>>(
+        self,
+        rel2: Relation<C2>,
+        rel3: Relation<C3>,
+    ) -> Relation<Triangles<X, Y, Z, C1, C2, C3>> {
+        assert_eq!(self.context_id, rel2.context_id, "Context mismatch");
+        assert_eq!(self.context_id, rel3.context_id, "Context mismatch");
+        Relation {
+            context_id: self.context_id,
+            dirty: self.dirty.or(rel2.dirty).or(rel3.dirty),
+            inner: Triangles {
+                c1: self.inner,
+                c2: rel2.inner,
+                c3: rel3.inner,
+                mapxy: BiMap::new(),
+                mapxz: BiMap::new(),
+                mapyz: BiMap::new(),
+            },
+        }
     }
 }

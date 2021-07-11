@@ -16,14 +16,17 @@ impl<X: Eq + Hash + Clone, Y: Eq + Hash + Clone> CountMap<(X, Y)> for BiMap<X, Y
     }
 
     fn empty() -> Self {
+        Self::new()
+    }
+}
+
+impl<X: Eq + Hash, Y: Eq + Hash> BiMap<X, Y> {
+    pub fn new() -> Self {
         BiMap {
             forward: HashMap::new(),
             backward: HashMap::new(),
         }
     }
-}
-
-impl<X: Eq + Hash, Y: Eq + Hash> BiMap<X, Y> {
     pub fn get_forward<'a>(&'a self, x: &X) -> MBorrowed<'a, HashMap<Y, isize>> {
         self.forward.get(x).or_owned_default()
     }
