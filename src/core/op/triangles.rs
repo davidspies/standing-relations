@@ -33,7 +33,7 @@ impl<
             let xzs = mapxz.get_forward(&x);
             let yzs = mapyz.get_forward(&y);
             for (z, lcount, rcount) in xzs.intersection(&yzs) {
-                continuation(((x.clone(), y.clone(), z.clone()), lcount * rcount))
+                continuation(((x.clone(), y.clone(), z.clone()), count * lcount * rcount))
             }
             mapxy.add((x, y), count);
         });
@@ -41,7 +41,7 @@ impl<
             let xys = mapxy.get_forward(&x);
             let zys = mapyz.get_backward(&z);
             for (y, lcount, rcount) in xys.intersection(&zys) {
-                continuation(((x.clone(), y.clone(), z.clone()), lcount * rcount))
+                continuation(((x.clone(), y.clone(), z.clone()), count * lcount * rcount))
             }
             mapxz.add((x, z), count);
         });
@@ -49,7 +49,7 @@ impl<
             let yxs = mapxy.get_backward(&y);
             let zxs = mapxz.get_backward(&z);
             for (x, lcount, rcount) in yxs.intersection(&zxs) {
-                continuation(((x.clone(), y.clone(), z.clone()), lcount * rcount))
+                continuation(((x.clone(), y.clone(), z.clone()), count * lcount * rcount))
             }
             mapyz.add((y, z), count);
         });
