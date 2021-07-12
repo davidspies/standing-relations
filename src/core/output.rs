@@ -7,6 +7,8 @@ use std::{
     collections::HashMap,
 };
 
+use super::TrackIndex;
+
 impl<C: Op> Relation<C> {
     pub fn get_output_<M: CountMap<C::D>>(self, context: &CreationContext) -> Output<C::D, C, M> {
         assert_eq!(
@@ -16,6 +18,7 @@ impl<C: Op> Relation<C> {
         );
         Output {
             context_tracker: self.context_tracker,
+            track_index: self.track_index,
             dirty: self.dirty.to_receive(),
             inner: RefCell::new(self.inner),
             data: RefCell::new(M::empty()),
@@ -25,6 +28,7 @@ impl<C: Op> Relation<C> {
 
 pub struct Output<D, C: Op<D = D>, M: CountMap<D> = HashMap<D, isize>> {
     context_tracker: ContextTracker,
+    track_index: TrackIndex,
     dirty: DirtyReceive,
     inner: RefCell<RelationInner<C>>,
     data: RefCell<M>,
@@ -52,5 +56,8 @@ impl<C: Op, M: CountMap<C::D>> Output<C::D, C, M> {
             "Context mismatch"
         );
         self.dirty.add_listener(f)
+    }
+    pub fn get_track_index(&self) -> &TrackIndex {
+        &self.track_index
     }
 }

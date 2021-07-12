@@ -22,4 +22,7 @@ digraph flow {
   node15 -> node16;
   node18 [label=< relation18 <br/> flat_map <br/> 6936 >];
   node16 -> node18;
+  node10 -> node0 [style=dotted];
+  node7 -> node11 [style=dotted];
+  node18 -> node11 [style=dotted];
 }

@@ -10,7 +10,7 @@ mod relation;
 
 pub use context::{
     input::{InputOp, Input_},
-    ContextTracker, CreationContext, ExecutionContext,
+    ContextTracker, CreationContext, ExecutionContext, TrackIndex,
 };
 pub use count_map::{CountMap, Observable};
 pub use op::{

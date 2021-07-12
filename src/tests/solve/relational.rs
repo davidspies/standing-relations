@@ -79,7 +79,7 @@ pub fn solve<Game: IsGame>(
     let mut context = context.begin();
 
     //Testing that ContextTracker can be sent between threads
-    let context_tracker = context.get_tracker().clone();
+    let context_tracker = context.get_tracker();
     let barrier = Arc::new(Barrier::new(2));
     let barrier_clone = Arc::clone(&barrier);
     thread::spawn(move || {

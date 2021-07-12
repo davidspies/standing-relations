@@ -135,10 +135,17 @@ impl<'a, I> CreationContext<'a, I> {
     /// any changes to the collection represented by the `Relation` argument are fed back into the
     /// `Input` argument. This repeats until the collection stops changing.
     pub fn feed<D>(&mut self, rel: Relation<impl Op<D = D> + 'a>, input: Input<'a, D>) {
-        self.add_feeder(FeedbackOnce {
-            output: rel.get_output_(&self),
-            input,
-        })
+        let edge = (
+            rel.get_track_index().clone(),
+            input.get_track_index().clone(),
+        );
+        self.add_feeder(
+            FeedbackOnce {
+                output: rel.get_output_(&self),
+                input,
+            },
+            Some(edge),
+        )
     }
 
     /// Similar to `feed` except that the `Relation` argument
@@ -151,10 +158,17 @@ impl<'a, I> CreationContext<'a, I> {
         rel: Relation<impl Op<D = (K, V)> + 'a>,
         input: Input<'a, V>,
     ) {
-        self.add_feeder(FeedbackOrdered {
-            output: rel.get_output_(&self),
-            input,
-        })
+        let edge = (
+            rel.get_track_index().clone(),
+            input.get_track_index().clone(),
+        );
+        self.add_feeder(
+            FeedbackOrdered {
+                output: rel.get_output_(&self),
+                input,
+            },
+            Some(edge),
+        )
     }
     pub fn interrupt<D, M: CountMap<D> + Observable + 'a>(
         &mut self,
@@ -163,7 +177,7 @@ impl<'a, I> CreationContext<'a, I> {
     ) where
         I: 'a,
     {
-        self.add_feeder(Interrupter { output, f })
+        self.add_feeder(Interrupter { output, f }, None)
     }
 
     /// Takes an `Output` as an argument rather than a `Relation` and rather
@@ -176,6 +190,10 @@ impl<'a, I> CreationContext<'a, I> {
         output: Output<D, impl Op<D = D> + 'a>,
         input: Input<'a, D>,
     ) {
-        self.add_feeder(Feedback { output, input })
+        let edge = (
+            output.get_track_index().clone(),
+            input.get_track_index().clone(),
+        );
+        self.add_feeder(Feedback { output, input }, Some(edge))
     }
 }

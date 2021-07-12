@@ -66,8 +66,12 @@ impl ContextTracker {
             inner: RelationInner::new(inner, count_send),
         }
     }
-    pub fn dump_dot(&self, file: impl Write) -> Result<(), io::Error> {
-        self.0.read().unwrap().dump_dot(file)
+    pub fn dump_dot(
+        &self,
+        file: impl Write,
+        extra_edges: &Vec<(TrackIndex, TrackIndex)>,
+    ) -> Result<(), io::Error> {
+        self.0.read().unwrap().dump_dot(file, extra_edges)
     }
 }
 impl Debug for ContextTracker {
@@ -92,7 +96,11 @@ impl ContextTrackerInner {
             }
         }
     }
-    fn dump_dot(&self, mut file: impl Write) -> Result<(), io::Error> {
+    fn dump_dot(
+        &self,
+        mut file: impl Write,
+        extra_edges: &Vec<(TrackIndex, TrackIndex)>,
+    ) -> Result<(), io::Error> {
         writeln!(file, "digraph flow {{")?;
         for (i, info) in self.0.iter().enumerate() {
             if info.hidden {
@@ -108,8 +116,16 @@ impl ContextTrackerInner {
                 info.count.get()
             )?;
             for dep in info.deps.iter() {
-                writeln!(file, "  node{} -> node{};", self.find_shown_index(dep), i,)?;
+                writeln!(file, "  node{} -> node{};", self.find_shown_index(dep), i)?;
             }
+        }
+        for (i, j) in extra_edges {
+            writeln!(
+                file,
+                "  node{} -> node{} [style=dotted];",
+                self.find_shown_index(&i),
+                self.find_shown_index(&j)
+            )?;
         }
         writeln!(file, "}}")
     }

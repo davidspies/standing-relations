@@ -3,14 +3,19 @@ mod pq_receiver;
 use self::pq_receiver::PQReceiver;
 use super::op::{Instruct, IsFeedback, IsFeeder};
 use crate::{
-    core,
+    core::{self, TrackIndex},
     pipes::{self, Receiver, Sender},
 };
-use std::ops::Deref;
+use std::{
+    io::{self, Write},
+    ops::Deref,
+    sync::Arc,
+};
 
 pub struct CreationContext<'a, I> {
     inner: core::CreationContext<'a>,
     feeders: Vec<Box<dyn IsFeeder<'a, I> + 'a>>,
+    extra_edges: Vec<(TrackIndex, TrackIndex)>,
     dirty_send: Sender<usize>,
     dirty_receive: Receiver<usize>,
 }
@@ -18,7 +23,19 @@ pub struct CreationContext<'a, I> {
 pub struct ExecutionContext<'a, I> {
     inner: core::ExecutionContext<'a>,
     feeders: Vec<Box<dyn IsFeeder<'a, I> + 'a>>,
+    extra_edges: Arc<Vec<(TrackIndex, TrackIndex)>>,
     dirty: PQReceiver,
+}
+
+pub struct ContextTracker {
+    inner: core::ContextTracker,
+    extra_edges: Arc<Vec<(TrackIndex, TrackIndex)>>,
+}
+
+impl ContextTracker {
+    pub fn dump_dot(&self, file: impl Write) -> Result<(), io::Error> {
+        self.inner.dump_dot(file, &self.extra_edges)
+    }
 }
 
 impl<'a, I> ExecutionContext<'a, I> {
@@ -35,6 +52,12 @@ impl<'a, I> ExecutionContext<'a, I> {
             }
         }
     }
+    pub fn get_tracker(&self) -> ContextTracker {
+        ContextTracker {
+            inner: self.inner.get_tracker().clone(),
+            extra_edges: self.extra_edges.clone(),
+        }
+    }
 }
 
 impl<'a, I> CreationContext<'a, I> {
@@ -43,6 +66,7 @@ impl<'a, I> CreationContext<'a, I> {
         CreationContext {
             inner: core::CreationContext::new(),
             feeders: Vec::new(),
+            extra_edges: Vec::new(),
             dirty_send,
             dirty_receive,
         }
@@ -51,14 +75,22 @@ impl<'a, I> CreationContext<'a, I> {
         ExecutionContext {
             inner: self.inner.begin(),
             feeders: self.feeders,
+            extra_edges: Arc::new(self.extra_edges),
             dirty: PQReceiver::new(self.dirty_receive),
         }
     }
-    pub(super) fn add_feeder(&mut self, mut feeder: impl IsFeedback<'a, I> + 'a) {
+    pub(super) fn add_feeder(
+        &mut self,
+        mut feeder: impl IsFeedback<'a, I> + 'a,
+        extra_edge: Option<(TrackIndex, TrackIndex)>,
+    ) {
         let cloned = self.dirty_send.clone();
         let i = self.feeders.len();
         feeder.add_listener(self, move || cloned.send(i));
         self.feeders.push(Box::new(feeder));
+        if let Some(edge) = extra_edge {
+            self.extra_edges.push(edge);
+        }
     }
 }
 

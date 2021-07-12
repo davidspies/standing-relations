@@ -46,3 +46,9 @@ pub(super) fn with_counter<'a, T>(
         f(x)
     }
 }
+
+impl<C: Op_> Relation<C> {
+    pub fn get_track_index(&self) -> &TrackIndex {
+        &self.track_index
+    }
+}

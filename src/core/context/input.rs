@@ -1,4 +1,6 @@
-use super::{handler_queue::IsInputHandler, ContextTracker, HandlerPosition, HandlerQueue};
+use super::{
+    handler_queue::IsInputHandler, ContextTracker, HandlerPosition, HandlerQueue, TrackIndex,
+};
 use crate::core::{
     dirty::{self, DirtySend},
     flat_iter::IntoFlatIterator,
@@ -22,6 +24,7 @@ impl<T> IsInputHandler for InputHandler<T> {
 
 pub struct Input_<'a, T> {
     context_tracker: ContextTracker,
+    track_index: TrackIndex,
     sender: pipes::Sender<T>,
     handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
     self_index: HandlerPosition,
@@ -31,6 +34,7 @@ impl<T> Clone for Input_<'_, T> {
     fn clone(&self) -> Self {
         Input_ {
             context_tracker: self.context_tracker.clone(),
+            track_index: self.track_index.clone(),
             sender: self.sender.clone(),
             handler_queue: Rc::clone(&self.handler_queue),
             self_index: self.self_index,
@@ -48,6 +52,9 @@ impl<T> Input_<'_, T> {
         assert_eq!(self.context_tracker, context.0.tracker, "Context mismatch");
         self.handler_queue.borrow_mut().enqueue(self.self_index);
         self.sender.send_all(data);
+    }
+    pub fn get_track_index(&self) -> &TrackIndex {
+        &self.track_index
     }
 }
 
@@ -77,17 +84,18 @@ impl<'a> CreationContext<'a> {
             dirty_send,
         };
         let i = self.0.add_handler(handler);
-        let input_sender = Input_ {
-            context_tracker: self.0.tracker.clone(),
-            sender: sender1,
-            handler_queue: Rc::clone(self.0.get_handler_queue()),
-            self_index: i,
-        };
         let relation =
             self.0
                 .tracker
                 .clone()
                 .add_relation(dirty_receive, InputOp(receiver2), vec![]);
+        let input_sender = Input_ {
+            context_tracker: self.0.tracker.clone(),
+            track_index: relation.track_index.clone(),
+            sender: sender1,
+            handler_queue: Rc::clone(self.0.get_handler_queue()),
+            self_index: i,
+        };
         (input_sender, relation)
     }
 }

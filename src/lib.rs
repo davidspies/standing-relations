@@ -9,10 +9,10 @@ pub use self::convenience::{
     Collection, Is,
 };
 pub use self::core::{
-    pipes, ContextTracker, CountMap, Dynamic, Input_, IsReduce, Observable, Op, Op_, Output,
-    ReduceProbe, Relation, Save, Saved,
+    pipes, CountMap, Dynamic, Input_, IsReduce, Observable, Op, Op_, Output, ReduceProbe, Relation,
+    Save, Saved,
 };
-pub use self::feedback::{CreationContext, ExecutionContext};
+pub use self::feedback::{ContextTracker, CreationContext, ExecutionContext};
 
 #[cfg(test)]
 mod tests;
