@@ -1,7 +1,11 @@
 use std::{
-    cell::{Cell, RefCell},
+    cell::RefCell,
     mem,
     rc::Rc,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
 };
 
 pub struct Sender<T>(Rc<RefCell<Vec<T>>>);
@@ -35,22 +39,22 @@ pub fn new<T>() -> (Sender<T>, Receiver<T>) {
 }
 
 #[derive(Clone)]
-pub struct CountSender(Rc<Cell<usize>>);
+pub struct CountSender(Arc<AtomicUsize>);
 impl CountSender {
     pub fn increment(&self) {
-        self.0.update(|x| x + 1);
+        self.0.fetch_add(1, Ordering::Relaxed);
     }
 }
 
 #[derive(Clone)]
-pub struct CountReceiver(Rc<Cell<usize>>);
+pub struct CountReceiver(Arc<AtomicUsize>);
 impl CountReceiver {
     pub fn get(&self) -> usize {
-        self.0.get()
+        self.0.load(Ordering::Relaxed)
     }
 }
 
 pub fn new_count() -> (CountSender, CountReceiver) {
-    let rc = Rc::new(Cell::new(0));
-    (CountSender(Rc::clone(&rc)), CountReceiver(rc))
+    let arc = Arc::new(AtomicUsize::new(0));
+    (CountSender(Arc::clone(&arc)), CountReceiver(arc))
 }
