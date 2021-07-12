@@ -22,6 +22,7 @@ impl Display for TrackIndex {
     }
 }
 
+#[derive(Clone)]
 pub struct ContextTracker(Arc<RwLock<ContextTrackerInner>>);
 struct TrackingInfo {
     name: String,
@@ -38,11 +39,6 @@ impl PartialEq for ContextTracker {
     }
 }
 impl Eq for ContextTracker {}
-impl Clone for ContextTracker {
-    fn clone(&self) -> Self {
-        Self(Arc::clone(&self.0))
-    }
-}
 impl ContextTracker {
     pub(super) fn new() -> Self {
         ContextTracker(Arc::new(RwLock::new(ContextTrackerInner(Vec::new()))))
