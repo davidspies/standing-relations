@@ -1,4 +1,7 @@
-use crate::core::{relation::RelationInner, Op_, Relation};
+use crate::core::{
+    relation::{self, RelationInner},
+    Op_, Relation,
+};
 
 pub struct Dynamic<'a, T>(Box<RelationInner<dyn DynOp<T = T> + 'a>>);
 
@@ -6,7 +9,10 @@ impl<'b, T> Op_ for Dynamic<'b, T> {
     type T = T;
 
     fn foreach<'a>(&'a mut self, continuation: impl FnMut(Self::T) + 'a) {
-        self.0.inner.foreach(Box::new(continuation))
+        self.0.inner.foreach(Box::new(relation::with_counter(
+            &self.0.counter,
+            continuation,
+        )))
     }
 
     fn get_type_name() -> &'static str {

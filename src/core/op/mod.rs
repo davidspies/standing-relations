@@ -12,11 +12,6 @@ pub trait Op_ {
     type T;
 
     fn foreach<'a>(&'a mut self, continuation: impl FnMut(Self::T) + 'a);
-    fn get_vec(&mut self) -> Vec<Self::T> {
-        let mut result = Vec::new();
-        self.foreach(|x| result.push(x));
-        result
-    }
     fn get_type_name() -> &'static str;
 }
 

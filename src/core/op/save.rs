@@ -70,7 +70,7 @@ impl<C: Op_> Saved<C> {
     }
     pub(super) fn propagate(&self) {
         if self.inner.borrow().dirty.take_status() {
-            let data = Rc::new(self.inner.borrow_mut().inner.inner.get_vec());
+            let data = Rc::new(self.inner.borrow_mut().inner.get_vec());
             for sender in &self.inner.borrow().senders {
                 sender.send(Rc::clone(&data))
             }

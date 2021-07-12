@@ -22,9 +22,22 @@ impl<C> RelationInner<C> {
 
 impl<C: Op_> RelationInner<C> {
     pub fn foreach(&mut self, f: impl FnMut(C::T)) {
-        self.inner.foreach(f)
+        let counter = &self.counter;
+        self.inner.foreach(with_counter(counter, f))
     }
     pub fn get_vec(&mut self) -> Vec<C::T> {
-        self.inner.get_vec()
+        let mut result = Vec::new();
+        self.foreach(|x| result.push(x));
+        result
+    }
+}
+
+pub(super) fn with_counter<'a, T>(
+    counter: &'a CountSender,
+    mut f: impl FnMut(T) + 'a,
+) -> impl FnMut(T) + 'a {
+    move |x| {
+        counter.increment();
+        f(x)
     }
 }
