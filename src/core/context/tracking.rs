@@ -2,10 +2,9 @@ use crate::core::{
     dirty::ReceiveBuilder, pipes, pipes::CountReceiver, relation::RelationInner, Op_, Relation,
 };
 use std::{
-    cell::{RefCell, RefMut},
     fmt::{self, Debug, Display},
-    ptr,
-    rc::Rc,
+    io::{self, Write},
+    sync::{Arc, RwLock},
 };
 
 #[derive(Clone)]
@@ -23,7 +22,7 @@ impl Display for TrackIndex {
     }
 }
 
-pub struct ContextTracker(Rc<RefCell<ContextTrackerInner>>);
+pub struct ContextTracker(Arc<RwLock<ContextTrackerInner>>);
 struct TrackingInfo {
     name: String,
     type_name: String,
@@ -35,18 +34,18 @@ struct ContextTrackerInner(Vec<TrackingInfo>);
 
 impl PartialEq for ContextTracker {
     fn eq(&self, other: &Self) -> bool {
-        ptr::eq(self.0.as_ptr(), other.0.as_ptr())
+        Arc::ptr_eq(&self.0, &other.0)
     }
 }
 impl Eq for ContextTracker {}
 impl Clone for ContextTracker {
     fn clone(&self) -> Self {
-        Self(Rc::clone(&self.0))
+        Self(Arc::clone(&self.0))
     }
 }
 impl ContextTracker {
     pub(super) fn new() -> Self {
-        ContextTracker(Rc::new(RefCell::new(ContextTrackerInner(Vec::new()))))
+        ContextTracker(Arc::new(RwLock::new(ContextTrackerInner(Vec::new()))))
     }
     pub(in crate::core) fn add_relation<C: Op_>(
         self,
@@ -55,8 +54,8 @@ impl ContextTracker {
         deps: Vec<TrackIndex>,
     ) -> Relation<C> {
         let (count_send, count_receive) = pipes::new_count();
-        let track_index = TrackIndex::new(self.0.borrow().0.len());
-        self.0.borrow_mut().0.push(TrackingInfo {
+        let track_index = TrackIndex::new(self.0.read().unwrap().0.len());
+        self.0.write().unwrap().0.push(TrackingInfo {
             name: format!("relation{}", track_index),
             type_name: C::get_type_name().to_string(),
             hidden: false,
@@ -71,13 +70,13 @@ impl ContextTracker {
             inner: RelationInner::new(inner, count_send),
         }
     }
-    fn borrow_mut<'a>(&'a self, track_index: &TrackIndex) -> RefMut<'a, TrackingInfo> {
-        RefMut::map(self.0.borrow_mut(), |v| &mut v.0[track_index.0])
+    pub fn dump_dot(&self, file: &mut impl Write) -> Result<(), io::Error> {
+        self.0.write().unwrap().dump_dot(file)
     }
 }
 impl Debug for ContextTracker {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.0.as_ptr())
+        write!(f, "{:?}", Arc::as_ptr(&self.0))
     }
 }
 
@@ -97,20 +96,42 @@ impl ContextTrackerInner {
             }
         }
     }
+    fn dump_dot(&self, file: &mut impl Write) -> Result<(), io::Error> {
+        writeln!(file, "digraph flow {{")?;
+        for (i, info) in self.0.iter().enumerate() {
+            if info.hidden {
+                continue;
+            }
+            let name = format!("{} <br/>", info.name);
+            writeln!(
+                file,
+                "  node{} [label=< {} {} <br/> {} >];",
+                i,
+                name,
+                info.type_name,
+                info.count.get()
+            )?;
+            for dep in info.deps.iter() {
+                writeln!(file, "  node{} -> node{};", self.find_shown_index(dep), i,)?;
+            }
+        }
+        writeln!(file, "}}")
+    }
 }
 
 impl<C: Op_> Relation<C> {
     pub fn named(self, name: &str) -> Self {
-        self.context_tracker.borrow_mut(&self.shown_index).name = name.to_string();
+        self.context_tracker.0.write().unwrap().0[self.shown_index.0].name = name.to_string();
         self
     }
     pub fn type_named(self, type_name: &str) -> Self {
-        self.context_tracker.borrow_mut(&self.shown_index).type_name = type_name.to_string();
+        self.context_tracker.0.write().unwrap().0[self.shown_index.0].type_name =
+            type_name.to_string();
         self
     }
     pub fn hidden(mut self) -> Self {
         {
-            let mut info = self.context_tracker.borrow_mut(&self.shown_index);
+            let mut info = &mut self.context_tracker.0.write().unwrap().0[self.shown_index.0];
             assert_eq!(
                 info.deps.len(),
                 1,
@@ -121,7 +142,8 @@ impl<C: Op_> Relation<C> {
         self.shown_index = self
             .context_tracker
             .0
-            .borrow()
+            .write()
+            .unwrap()
             .find_shown_index(&self.shown_index)
             .clone();
         self
