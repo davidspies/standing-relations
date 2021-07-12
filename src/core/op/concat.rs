@@ -13,9 +13,12 @@ impl<C1: Op_, C2: Op_<T = C1::T>> Op_ for Concat<C1, C2> {
 
 impl<C1: Op_> Relation<C1> {
     pub fn concat<C2: Op_<T = C1::T>>(self, other: Relation<C2>) -> Relation<Concat<C1, C2>> {
-        assert_eq!(self.context_id, other.context_id, "Context mismatch");
+        assert_eq!(
+            self.context_tracker, other.context_tracker,
+            "Context mismatch"
+        );
         Relation {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker,
             dirty: self.dirty.or(other.dirty),
             inner: Concat(self.inner, other.inner),
         }

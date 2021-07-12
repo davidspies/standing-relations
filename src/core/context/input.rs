@@ -1,4 +1,4 @@
-use super::{handler_queue::IsInputHandler, ContextId, HandlerPosition, HandlerQueue};
+use super::{handler_queue::IsInputHandler, ContextTracker, HandlerPosition, HandlerQueue};
 use crate::core::{
     dirty::{self, DirtySend},
     flat_iter::IntoFlatIterator,
@@ -21,7 +21,7 @@ impl<T> IsInputHandler for InputHandler<T> {
 }
 
 pub struct Input_<'a, T> {
-    context_id: ContextId,
+    context_tracker: ContextTracker,
     sender: pipes::Sender<T>,
     handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
     self_index: HandlerPosition,
@@ -30,7 +30,7 @@ pub struct Input_<'a, T> {
 impl<T> Clone for Input_<'_, T> {
     fn clone(&self) -> Self {
         Input_ {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker.clone(),
             sender: self.sender.clone(),
             handler_queue: Rc::clone(&self.handler_queue),
             self_index: self.self_index,
@@ -40,12 +40,12 @@ impl<T> Clone for Input_<'_, T> {
 
 impl<T> Input_<'_, T> {
     pub fn send(&self, context: &ExecutionContext, x: T) {
-        assert_eq!(self.context_id, context.0.id, "Context mismatch");
+        assert_eq!(self.context_tracker, context.0.tracker, "Context mismatch");
         self.handler_queue.borrow_mut().enqueue(self.self_index);
         self.sender.send(x)
     }
     pub fn send_all(&self, context: &ExecutionContext, data: impl IntoIterator<Item = T>) {
-        assert_eq!(self.context_id, context.0.id, "Context mismatch");
+        assert_eq!(self.context_tracker, context.0.tracker, "Context mismatch");
         self.handler_queue.borrow_mut().enqueue(self.self_index);
         self.sender.send_all(data);
     }
@@ -75,13 +75,13 @@ impl<'a> CreationContext<'a> {
         };
         let i = self.0.add_handler(handler);
         let input_sender = Input_ {
-            context_id: self.0.id,
+            context_tracker: self.0.tracker.clone(),
             sender: sender1,
             handler_queue: Rc::clone(self.0.get_handler_queue()),
             self_index: i,
         };
         let relation = Relation {
-            context_id: self.0.id,
+            context_tracker: self.0.tracker.clone(),
             dirty: dirty_receive,
             inner: InputOp(receiver2),
         };

@@ -21,7 +21,7 @@ where
 impl<C: Op_<T = (D, isize)>, D: Eq + Hash> Relation<C> {
     pub fn consolidate(self) -> Relation<Consolidate<C>> {
         Relation {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker,
             dirty: self.dirty,
             inner: Consolidate(self.inner),
         }

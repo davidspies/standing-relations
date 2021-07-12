@@ -2,8 +2,8 @@ mod map;
 
 use self::map::{InsertResult, OutputMap};
 use crate::core::{
-    context::ContextId, CountMap, CreationContext, ExecutionContext, Observable, Op, Op_, Relation,
-    Save,
+    context::ContextTracker, CountMap, CreationContext, ExecutionContext, Observable, Op, Op_,
+    Relation, Save,
 };
 use std::{
     cell::Ref,
@@ -84,7 +84,7 @@ impl<C: Op<D = (K, X)>, K: Clone + Eq + Hash, X> Relation<C> {
         f: F,
     ) -> Relation<Reduce<K, X, C, M, Y, OM, F>> {
         Relation {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker,
             dirty: self.dirty,
             inner: Reduce {
                 inner: self.inner,
@@ -127,16 +127,20 @@ impl<
 
 impl<C: IsReduce> Relation<C> {
     pub fn probe(self, context: &CreationContext) -> ReduceProbe<C> {
-        assert_eq!(self.context_id, context.get_id(), "Context mismatch");
+        assert_eq!(
+            &self.context_tracker,
+            context.get_tracker(),
+            "Context mismatch"
+        );
         ReduceProbe {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker.clone(),
             inner: Saved::new(self),
         }
     }
 }
 
 pub struct ReduceProbe<C: IsReduce> {
-    context_id: ContextId,
+    context_tracker: ContextTracker,
     inner: Saved<C>,
 }
 
@@ -148,7 +152,11 @@ impl<C: IsReduce> ReduceProbe<C> {
         self.inner.clone().get()
     }
     pub fn get<'a>(&'a self, context: &'a ExecutionContext<'_>) -> Ref<'a, C::OM> {
-        assert_eq!(self.context_id, context.get_id(), "Context mismatch");
+        assert_eq!(
+            &self.context_tracker,
+            context.get_tracker(),
+            "Context mismatch"
+        );
         self.inner.propagate();
         Ref::map(self.inner.borrow(), |x| x.get_map())
     }
@@ -157,7 +165,7 @@ impl<C: IsReduce> ReduceProbe<C> {
 impl<C: IsReduce> Clone for ReduceProbe<C> {
     fn clone(&self) -> Self {
         ReduceProbe {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker.clone(),
             inner: self.inner.clone(),
         }
     }

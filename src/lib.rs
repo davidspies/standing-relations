@@ -9,7 +9,7 @@ pub use self::convenience::{
     Collection, Is,
 };
 pub use self::core::{
-    pipes, ContextId, CountMap, Dynamic, Input_, IsReduce, Observable, Op, Op_, Output,
+    pipes, ContextTracker, CountMap, Dynamic, Input_, IsReduce, Observable, Op, Op_, Output,
     ReduceProbe, Relation, Save, Saved,
 };
 pub use self::feedback::{CreationContext, ExecutionContext};

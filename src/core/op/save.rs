@@ -1,5 +1,5 @@
 use crate::core::{
-    context::ContextId,
+    context::ContextTracker,
     dirty::DirtyReceive,
     pipes::{self, Receiver, Sender},
     Op_, Relation,
@@ -21,14 +21,14 @@ struct SaveInner<C: Op_> {
 }
 
 pub struct Saved<C: Op_> {
-    context_id: ContextId,
+    context_tracker: ContextTracker,
     inner: Rc<RefCell<SaveInner<C>>>,
 }
 
 impl<C: Op_> Clone for Saved<C> {
     fn clone(&self) -> Self {
         Saved {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker.clone(),
             inner: Rc::clone(&self.inner),
         }
     }
@@ -37,7 +37,7 @@ impl<C: Op_> Clone for Saved<C> {
 impl<C: Op_> Saved<C> {
     pub fn new(rel: Relation<C>) -> Self {
         Saved {
-            context_id: rel.context_id,
+            context_tracker: rel.context_tracker,
             inner: Rc::new(RefCell::new(SaveInner {
                 inner: rel.inner,
                 senders: Vec::new(),
@@ -56,7 +56,7 @@ impl<C: Op_> Saved<C> {
             borrowed.dirty.add_target()
         };
         Relation {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker.clone(),
             dirty,
             inner: Save {
                 inner: self.clone(),

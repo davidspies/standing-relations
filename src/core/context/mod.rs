@@ -1,21 +1,48 @@
-mod global_id;
 mod handler_queue;
 pub mod input;
 
 use self::handler_queue::{HandlerPosition, HandlerQueue};
-use std::{cell::RefCell, rc::Rc};
-
-pub type ContextId = usize;
+use std::{
+    cell::RefCell,
+    fmt::{self, Debug},
+    ptr,
+    rc::Rc,
+};
 
 struct Context<'a> {
-    id: usize,
+    tracker: ContextTracker,
     handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
+}
+
+pub struct ContextTracker(Rc<RefCell<ContextTrackerInner>>);
+struct ContextTrackerInner;
+
+impl PartialEq for ContextTracker {
+    fn eq(&self, other: &Self) -> bool {
+        ptr::eq(self.0.as_ptr(), other.0.as_ptr())
+    }
+}
+impl Eq for ContextTracker {}
+impl Clone for ContextTracker {
+    fn clone(&self) -> Self {
+        Self(Rc::clone(&self.0))
+    }
+}
+impl ContextTracker {
+    fn new() -> Self {
+        ContextTracker(Rc::new(RefCell::new(ContextTrackerInner)))
+    }
+}
+impl Debug for ContextTracker {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.0.as_ptr())
+    }
 }
 
 impl<'a> Context<'a> {
     fn new() -> Self {
         Context {
-            id: global_id::next_id(),
+            tracker: ContextTracker::new(),
             handler_queue: Rc::new(RefCell::new(HandlerQueue::new())),
         }
     }
@@ -40,8 +67,8 @@ impl<'a> CreationContext<'a> {
     pub fn begin(self) -> ExecutionContext<'a> {
         ExecutionContext(self.0)
     }
-    pub fn get_id(&self) -> ContextId {
-        self.0.id
+    pub fn get_tracker(&self) -> &ContextTracker {
+        &self.0.tracker
     }
 }
 
@@ -49,7 +76,7 @@ impl<'a> ExecutionContext<'a> {
     pub fn commit(&mut self) {
         self.0.commit()
     }
-    pub fn get_id(&self) -> ContextId {
-        self.0.id
+    pub fn get_tracker(&self) -> &ContextTracker {
+        &self.0.tracker
     }
 }

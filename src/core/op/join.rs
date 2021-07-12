@@ -88,9 +88,12 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<
         self,
         other: Relation<C2>,
     ) -> Relation<Join<K, V1, V2, C1, C2>> {
-        assert_eq!(self.context_id, other.context_id, "Context mismatch");
+        assert_eq!(
+            self.context_tracker, other.context_tracker,
+            "Context mismatch"
+        );
         Relation {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker,
             dirty: self.dirty.or(other.dirty),
             inner: Join {
                 left: self.inner,
@@ -103,9 +106,12 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<
 
     /// Retains only those keys which have count 0 in the argument relation.
     pub fn antijoin<C2: Op<D = K>>(self, other: Relation<C2>) -> Relation<AntiJoin<K, V1, C1, C2>> {
-        assert_eq!(self.context_id, other.context_id, "Context mismatch");
+        assert_eq!(
+            self.context_tracker, other.context_tracker,
+            "Context mismatch"
+        );
         Relation {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker,
             dirty: self.dirty.or(other.dirty),
             inner: AntiJoin {
                 left: self.inner,

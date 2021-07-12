@@ -57,7 +57,7 @@ impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
             dirty: this_dirty,
         }));
         let left_result = Relation {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker.clone(),
             dirty: left_dirty,
             inner: Split {
                 inner: Rc::clone(&inner),
@@ -65,7 +65,7 @@ impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
             },
         };
         let right_result = Relation {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker,
             dirty: right_dirty,
             inner: Split {
                 inner,

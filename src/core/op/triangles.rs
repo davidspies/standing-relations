@@ -65,10 +65,16 @@ impl<X: Clone + Eq + Hash, Y: Clone + Eq + Hash, C1: Op<D = (X, Y)>> Relation<C1
         rel2: Relation<C2>,
         rel3: Relation<C3>,
     ) -> Relation<Triangles<X, Y, Z, C1, C2, C3>> {
-        assert_eq!(self.context_id, rel2.context_id, "Context mismatch");
-        assert_eq!(self.context_id, rel3.context_id, "Context mismatch");
+        assert_eq!(
+            self.context_tracker, rel2.context_tracker,
+            "Context mismatch"
+        );
+        assert_eq!(
+            self.context_tracker, rel3.context_tracker,
+            "Context mismatch"
+        );
         Relation {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker,
             dirty: self.dirty.or(rel2.dirty).or(rel3.dirty),
             inner: Triangles {
                 c1: self.inner,

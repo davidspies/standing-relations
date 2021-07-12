@@ -1,5 +1,5 @@
 use crate::core::{
-    context::ContextId, dirty::DirtyReceive, CountMap, CreationContext, ExecutionContext, Op,
+    context::ContextTracker, dirty::DirtyReceive, CountMap, CreationContext, ExecutionContext, Op,
     Relation,
 };
 use std::{
@@ -9,9 +9,13 @@ use std::{
 
 impl<C: Op> Relation<C> {
     pub fn get_output_<M: CountMap<C::D>>(self, context: &CreationContext) -> Output<C::D, C, M> {
-        assert_eq!(self.context_id, context.get_id(), "Context mismatch");
+        assert_eq!(
+            &self.context_tracker,
+            context.get_tracker(),
+            "Context mismatch"
+        );
         Output {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker,
             dirty: self.dirty.to_receive(),
             inner: RefCell::new(self.inner),
             data: RefCell::new(M::empty()),
@@ -20,7 +24,7 @@ impl<C: Op> Relation<C> {
 }
 
 pub struct Output<D, C: Op<D = D>, M: CountMap<D> = HashMap<D, isize>> {
-    context_id: ContextId,
+    context_tracker: ContextTracker,
     dirty: DirtyReceive,
     inner: RefCell<C>,
     data: RefCell<M>,
@@ -28,7 +32,11 @@ pub struct Output<D, C: Op<D = D>, M: CountMap<D> = HashMap<D, isize>> {
 
 impl<C: Op, M: CountMap<C::D>> Output<C::D, C, M> {
     pub fn get<'a>(&'a self, context: &'a ExecutionContext<'_>) -> Ref<'a, M> {
-        assert_eq!(self.context_id, context.get_id(), "Context mismatch");
+        assert_eq!(
+            &self.context_tracker,
+            context.get_tracker(),
+            "Context mismatch"
+        );
         if self.dirty.take_status() {
             let mut m = self.data.borrow_mut();
             self.inner.borrow_mut().foreach(|(k, v)| {
@@ -38,7 +46,11 @@ impl<C: Op, M: CountMap<C::D>> Output<C::D, C, M> {
         self.data.borrow()
     }
     pub fn add_listener(&mut self, context: &CreationContext<'_>, f: impl FnMut() + 'static) {
-        assert_eq!(self.context_id, context.get_id(), "Context mismatch");
+        assert_eq!(
+            &self.context_tracker,
+            context.get_tracker(),
+            "Context mismatch"
+        );
         self.dirty.add_listener(f)
     }
 }

@@ -29,13 +29,13 @@ impl<C: Op_> Relation<C> {
     /// dispatch at runtime.
     ///
     /// Try inserting this in the middle of a big relation if the compiler is running slowly or
-    /// using up too much memory. 
+    /// using up too much memory.
     pub fn dynamic<'a>(self) -> Relation<Dynamic<'a, C::T>>
     where
         C: 'a,
     {
         Relation {
-            context_id: self.context_id,
+            context_tracker: self.context_tracker,
             dirty: self.dirty,
             inner: Dynamic(Box::new(self.inner)),
         }
