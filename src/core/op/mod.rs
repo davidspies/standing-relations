@@ -17,6 +17,7 @@ pub trait Op_ {
         self.foreach(|x| result.push(x));
         result
     }
+    fn get_type_name() -> &'static str;
 }
 
 pub trait Op: Op_<T = (Self::D, isize)> {

@@ -37,6 +37,10 @@ impl<TI: IntoIterator, C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator>
             continuation(x)
         }
     }
+
+    fn get_type_name() -> &'static str {
+        "split"
+    }
 }
 
 impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
@@ -60,18 +64,19 @@ impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
         let left_result = Relation {
             context_tracker: self.context_tracker.clone(),
             dirty: left_dirty,
-            inner: RelationInner::new(Split {
+            inner: self.context_tracker.add_relation(Split {
                 inner: Rc::clone(&inner),
                 receiver: left_receiver,
             }),
         };
+        let inner = self.context_tracker.add_relation(Split {
+            inner,
+            receiver: right_receiver,
+        });
         let right_result = Relation {
             context_tracker: self.context_tracker,
             dirty: right_dirty,
-            inner: RelationInner::new(Split {
-                inner,
-                receiver: right_receiver,
-            }),
+            inner,
         };
         (left_result, right_result)
     }

@@ -71,6 +71,10 @@ impl<
             }
         }
     }
+
+    fn get_type_name() -> &'static str {
+        "reduce"
+    }
 }
 
 impl<C: Op<D = (K, X)>, K: Clone + Eq + Hash, X> Relation<C> {
@@ -83,17 +87,16 @@ impl<C: Op<D = (K, X)>, K: Clone + Eq + Hash, X> Relation<C> {
         self,
         f: F,
     ) -> Relation<Reduce<K, X, C, M, Y, OM, F>> {
+        let inner = self.context_tracker.add_relation(Reduce {
+            inner: self.inner,
+            in_map: HashMap::new(),
+            out_map: Default::default(),
+            f,
+        });
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty,
-            inner: RelationInner {
-                inner: Reduce {
-                    inner: self.inner,
-                    in_map: HashMap::new(),
-                    out_map: Default::default(),
-                    f,
-                },
-            },
+            inner,
         }
     }
     pub fn reduce_<M: CountMap<X> + Observable, Y: Clone + Eq, F: Fn(&K, &M) -> Y>(

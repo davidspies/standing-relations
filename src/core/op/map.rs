@@ -16,19 +16,22 @@ impl<C: Op_, I: IntoIterator, F: Fn(C::T) -> I> Op_ for FlatMap<C, I, F> {
             }
         })
     }
+
+    fn get_type_name() -> &'static str {
+        "flat_map"
+    }
 }
 
 impl<C: Op_> Relation<C> {
     pub fn flat_map_<I: IntoIterator, F: Fn(C::T) -> I>(self, f: F) -> Relation<FlatMap<C, I, F>> {
+        let inner = self.context_tracker.add_relation(FlatMap {
+            inner: self.inner,
+            f,
+        });
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty,
-            inner: RelationInner {
-                inner: FlatMap {
-                    inner: self.inner,
-                    f,
-                },
-            },
+            inner,
         }
     }
 }

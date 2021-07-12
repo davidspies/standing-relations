@@ -40,6 +40,10 @@ impl<
             right_map.add((k, y), y_count);
         });
     }
+
+    fn get_type_name() -> &'static str {
+        "join"
+    }
 }
 
 pub struct AntiJoin<K, V, C1: Op<D = (K, V)>, C2: Op<D = K>> {
@@ -83,6 +87,10 @@ impl<K: Eq + Hash + Clone, V: Eq + Hash + Clone, C1: Op<D = (K, V)>, C2: Op<D = 
             }
         });
     }
+
+    fn get_type_name() -> &'static str {
+        "antijoin"
+    }
 }
 
 impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<C1> {
@@ -94,17 +102,16 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<
             self.context_tracker, other.context_tracker,
             "Context mismatch"
         );
+        let inner = self.context_tracker.add_relation(Join {
+            left: self.inner,
+            left_map: HashMap::new(),
+            right: other.inner,
+            right_map: HashMap::new(),
+        });
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty.or(other.dirty),
-            inner: RelationInner {
-                inner: Join {
-                    left: self.inner,
-                    left_map: HashMap::new(),
-                    right: other.inner,
-                    right_map: HashMap::new(),
-                },
-            },
+            inner,
         }
     }
 
@@ -114,17 +121,16 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<
             self.context_tracker, other.context_tracker,
             "Context mismatch"
         );
+        let inner = self.context_tracker.add_relation(AntiJoin {
+            left: self.inner,
+            left_map: HashMap::new(),
+            right: other.inner,
+            right_map: HashMap::new(),
+        });
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty.or(other.dirty),
-            inner: RelationInner {
-                inner: AntiJoin {
-                    left: self.inner,
-                    left_map: HashMap::new(),
-                    right: other.inner,
-                    right_map: HashMap::new(),
-                },
-            },
+            inner,
         }
     }
 }

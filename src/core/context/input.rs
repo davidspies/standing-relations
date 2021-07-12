@@ -3,7 +3,6 @@ use crate::core::{
     dirty::{self, DirtySend},
     flat_iter::IntoFlatIterator,
     pipes::{self, Receiver},
-    relation::RelationInner,
     CreationContext, ExecutionContext, Op_, Relation,
 };
 use std::{cell::RefCell, rc::Rc};
@@ -62,6 +61,9 @@ impl<T> Op_ for InputOp<T> {
             continuation(x)
         }
     }
+    fn get_type_name() -> &'static str {
+        "input"
+    }
 }
 
 impl<'a> CreationContext<'a> {
@@ -84,9 +86,7 @@ impl<'a> CreationContext<'a> {
         let relation = Relation {
             context_tracker: self.0.tracker.clone(),
             dirty: dirty_receive,
-            inner: RelationInner {
-                inner: InputOp(receiver2),
-            },
+            inner: self.0.tracker.add_relation(InputOp(receiver2)),
         };
         (input_sender, relation)
     }

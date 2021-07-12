@@ -59,12 +59,10 @@ impl<C: Op_> Saved<C> {
         Relation {
             context_tracker: self.context_tracker.clone(),
             dirty,
-            inner: RelationInner {
-                inner: Save {
-                    inner: self.clone(),
-                    receiver,
-                },
-            },
+            inner: self.context_tracker.add_relation(Save {
+                inner: self.clone(),
+                receiver,
+            }),
         }
     }
     pub(super) fn borrow(&self) -> Ref<RelationInner<C>> {
@@ -93,6 +91,10 @@ where
                 continuation(x.clone())
             }
         }
+    }
+
+    fn get_type_name() -> &'static str {
+        "save"
     }
 }
 

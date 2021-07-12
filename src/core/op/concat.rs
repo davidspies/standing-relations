@@ -9,6 +9,9 @@ impl<C1: Op_, C2: Op_<T = C1::T>> Op_ for Concat<C1, C2> {
         self.0.foreach(&mut continuation);
         self.1.foreach(continuation);
     }
+    fn get_type_name() -> &'static str {
+        "concat"
+    }
 }
 
 impl<C1: Op_> Relation<C1> {
@@ -17,12 +20,13 @@ impl<C1: Op_> Relation<C1> {
             self.context_tracker, other.context_tracker,
             "Context mismatch"
         );
+        let inner = self
+            .context_tracker
+            .add_relation(Concat(self.inner, other.inner));
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty.or(other.dirty),
-            inner: RelationInner {
-                inner: Concat(self.inner, other.inner),
-            },
+            inner,
         }
     }
 }

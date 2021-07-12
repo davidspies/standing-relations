@@ -1,4 +1,7 @@
-use crate::core::{context::ContextTracker, dirty::ReceiveBuilder, Op_};
+use crate::{
+    core::{context::ContextTracker, dirty::ReceiveBuilder, Op_},
+    pipes::CountSender,
+};
 
 pub struct Relation<C: Op_> {
     pub(super) context_tracker: ContextTracker,
@@ -7,12 +10,13 @@ pub struct Relation<C: Op_> {
 }
 
 pub(super) struct RelationInner<C: ?Sized> {
+    pub counter: CountSender,
     pub inner: C,
 }
 
 impl<C> RelationInner<C> {
-    pub fn new(inner: C) -> Self {
-        RelationInner { inner }
+    pub fn new(inner: C, counter: CountSender) -> Self {
+        RelationInner { counter, inner }
     }
 }
 
