@@ -66,7 +66,7 @@ impl ContextTracker {
             inner: RelationInner::new(inner, count_send),
         }
     }
-    pub fn dump_dot(&self, file: &mut impl Write) -> Result<(), io::Error> {
+    pub fn dump_dot(&self, file: impl Write) -> Result<(), io::Error> {
         self.0.read().unwrap().dump_dot(file)
     }
 }
@@ -92,7 +92,7 @@ impl ContextTrackerInner {
             }
         }
     }
-    fn dump_dot(&self, file: &mut impl Write) -> Result<(), io::Error> {
+    fn dump_dot(&self, mut file: impl Write) -> Result<(), io::Error> {
         writeln!(file, "digraph flow {{")?;
         for (i, info) in self.0.iter().enumerate() {
             if info.hidden {

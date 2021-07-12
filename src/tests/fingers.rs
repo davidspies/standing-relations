@@ -102,12 +102,13 @@ impl IsPosition for Position {
 #[test]
 fn fingers() {
     let mut mint = Mint::new("tests/goldenfiles");
-    let mut file = mint.new_goldenfile("fingers.txt").unwrap();
-    let m = relational::solve(&Fingers);
+    let mut stats_file = mint.new_goldenfile("fingers.txt").unwrap();
+    let stats = mint.new_goldenfile("fingers_stats.dot").unwrap();
+    let m = relational::solve(&Fingers, stats);
     let mut v = m.into_iter().collect::<Vec<_>>();
     v.sort();
     for (x, r) in v {
-        writeln!(file, "{:?}: {:?}", x, r).unwrap();
+        writeln!(stats_file, "{:?}: {:?}", x, r).unwrap();
     }
 
     // When the Mint goes out of scope, it will check the new contents of file
