@@ -67,7 +67,7 @@ impl ContextTracker {
         }
     }
     pub fn dump_dot(&self, file: &mut impl Write) -> Result<(), io::Error> {
-        self.0.write().unwrap().dump_dot(file)
+        self.0.read().unwrap().dump_dot(file)
     }
 }
 impl Debug for ContextTracker {
@@ -127,21 +127,16 @@ impl<C: Op_> Relation<C> {
     }
     pub fn hidden(mut self) -> Self {
         {
-            let mut info = &mut self.context_tracker.0.write().unwrap().0[self.shown_index.0];
+            let mut borrowed = self.context_tracker.0.write().unwrap();
+            let mut info = &mut borrowed.0[self.shown_index.0];
             assert_eq!(
                 info.deps.len(),
                 1,
                 "Can only hide nodes with exactly one dependency"
             );
             info.hidden = true;
+            self.shown_index = borrowed.find_shown_index(&self.shown_index).clone();
         }
-        self.shown_index = self
-            .context_tracker
-            .0
-            .write()
-            .unwrap()
-            .find_shown_index(&self.shown_index)
-            .clone();
         self
     }
 }
