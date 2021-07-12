@@ -1,7 +1,7 @@
-use crate::core::{Op_, Relation};
+use crate::core::{relation::RelationInner, Op_, Relation};
 
 pub struct FlatMap<C: Op_, I: IntoIterator, F: Fn(C::T) -> I> {
-    inner: C,
+    inner: RelationInner<C>,
     f: F,
 }
 
@@ -23,9 +23,11 @@ impl<C: Op_> Relation<C> {
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty,
-            inner: FlatMap {
-                inner: self.inner,
-                f,
+            inner: RelationInner {
+                inner: FlatMap {
+                    inner: self.inner,
+                    f,
+                },
             },
         }
     }

@@ -1,10 +1,12 @@
-use crate::core::{mborrowed::OrOwnedDefault, CountMap, Op, Op_, Relation};
+use crate::core::{
+    mborrowed::OrOwnedDefault, relation::RelationInner, CountMap, Op, Op_, Relation,
+};
 use std::{collections::HashMap, hash::Hash};
 
 pub struct Join<K, V1, V2, C1: Op<D = (K, V1)>, C2: Op<D = (K, V2)>> {
-    left: C1,
+    left: RelationInner<C1>,
     left_map: HashMap<K, HashMap<V1, isize>>,
-    right: C2,
+    right: RelationInner<C2>,
     right_map: HashMap<K, HashMap<V2, isize>>,
 }
 
@@ -41,9 +43,9 @@ impl<
 }
 
 pub struct AntiJoin<K, V, C1: Op<D = (K, V)>, C2: Op<D = K>> {
-    left: C1,
+    left: RelationInner<C1>,
     left_map: HashMap<K, HashMap<V, isize>>,
-    right: C2,
+    right: RelationInner<C2>,
     right_map: HashMap<K, isize>,
 }
 
@@ -95,11 +97,13 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty.or(other.dirty),
-            inner: Join {
-                left: self.inner,
-                left_map: HashMap::new(),
-                right: other.inner,
-                right_map: HashMap::new(),
+            inner: RelationInner {
+                inner: Join {
+                    left: self.inner,
+                    left_map: HashMap::new(),
+                    right: other.inner,
+                    right_map: HashMap::new(),
+                },
             },
         }
     }
@@ -113,11 +117,13 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty.or(other.dirty),
-            inner: AntiJoin {
-                left: self.inner,
-                left_map: HashMap::new(),
-                right: other.inner,
-                right_map: HashMap::new(),
+            inner: RelationInner {
+                inner: AntiJoin {
+                    left: self.inner,
+                    left_map: HashMap::new(),
+                    right: other.inner,
+                    right_map: HashMap::new(),
+                },
             },
         }
     }

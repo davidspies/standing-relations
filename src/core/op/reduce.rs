@@ -2,8 +2,8 @@ mod map;
 
 use self::map::{InsertResult, OutputMap};
 use crate::core::{
-    context::ContextTracker, CountMap, CreationContext, ExecutionContext, Observable, Op, Op_,
-    Relation, Save,
+    context::ContextTracker, relation::RelationInner, CountMap, CreationContext, ExecutionContext,
+    Observable, Op, Op_, Relation, Save,
 };
 use std::{
     cell::Ref,
@@ -22,7 +22,7 @@ pub struct Reduce<
     OM: OutputMap<K, Y>,
     F: Fn(&K, &M) -> Y,
 > {
-    inner: C,
+    inner: RelationInner<C>,
     in_map: HashMap<K, M>,
     out_map: OM,
     f: F,
@@ -86,11 +86,13 @@ impl<C: Op<D = (K, X)>, K: Clone + Eq + Hash, X> Relation<C> {
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty,
-            inner: Reduce {
-                inner: self.inner,
-                in_map: HashMap::new(),
-                out_map: Default::default(),
-                f,
+            inner: RelationInner {
+                inner: Reduce {
+                    inner: self.inner,
+                    in_map: HashMap::new(),
+                    out_map: Default::default(),
+                    f,
+                },
             },
         }
     }
@@ -158,7 +160,7 @@ impl<C: IsReduce> ReduceProbe<C> {
             "Context mismatch"
         );
         self.inner.propagate();
-        Ref::map(self.inner.borrow(), |x| x.get_map())
+        Ref::map(self.inner.borrow(), |x| x.inner.get_map())
     }
 }
 

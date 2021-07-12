@@ -2,6 +2,7 @@ use crate::core::{
     dirty::DirtyReceive,
     flat_iter::IntoFlatIterator,
     pipes::{self, Receiver, Sender},
+    relation::RelationInner,
     Op_, Relation,
 };
 use std::{cell::RefCell, rc::Rc};
@@ -12,7 +13,7 @@ pub struct Split<TI: IntoIterator, C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: I
 }
 
 struct SplitInner<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> {
-    inner: C,
+    inner: RelationInner<C>,
     left_sender: Sender<LI>,
     right_sender: Sender<RI>,
     dirty: DirtyReceive,
@@ -59,18 +60,18 @@ impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
         let left_result = Relation {
             context_tracker: self.context_tracker.clone(),
             dirty: left_dirty,
-            inner: Split {
+            inner: RelationInner::new(Split {
                 inner: Rc::clone(&inner),
                 receiver: left_receiver,
-            },
+            }),
         };
         let right_result = Relation {
             context_tracker: self.context_tracker,
             dirty: right_dirty,
-            inner: Split {
+            inner: RelationInner::new(Split {
                 inner,
                 receiver: right_receiver,
-            },
+            }),
         };
         (left_result, right_result)
     }

@@ -1,7 +1,7 @@
-use crate::core::{CountMap, Op, Op_, Relation};
+use crate::core::{relation::RelationInner, CountMap, Op, Op_, Relation};
 use std::{collections::HashMap, hash::Hash};
 
-pub struct Consolidate<C: Op_>(C);
+pub struct Consolidate<C: Op_>(RelationInner<C>);
 
 impl<C: Op> Op_ for Consolidate<C>
 where
@@ -23,7 +23,9 @@ impl<C: Op_<T = (D, isize)>, D: Eq + Hash> Relation<C> {
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty,
-            inner: Consolidate(self.inner),
+            inner: RelationInner {
+                inner: Consolidate(self.inner),
+            },
         }
     }
 }

@@ -2,6 +2,7 @@ use crate::core::{
     context::ContextTracker,
     dirty::DirtyReceive,
     pipes::{self, Receiver, Sender},
+    relation::RelationInner,
     Op_, Relation,
 };
 use std::{
@@ -15,7 +16,7 @@ pub struct Save<C: Op_> {
 }
 
 struct SaveInner<C: Op_> {
-    inner: C,
+    inner: RelationInner<C>,
     senders: Vec<Sender<Rc<Vec<C::T>>>>,
     dirty: DirtyReceive,
 }
@@ -58,18 +59,20 @@ impl<C: Op_> Saved<C> {
         Relation {
             context_tracker: self.context_tracker.clone(),
             dirty,
-            inner: Save {
-                inner: self.clone(),
-                receiver,
+            inner: RelationInner {
+                inner: Save {
+                    inner: self.clone(),
+                    receiver,
+                },
             },
         }
     }
-    pub fn borrow(&self) -> Ref<C> {
+    pub(super) fn borrow(&self) -> Ref<RelationInner<C>> {
         Ref::map(self.inner.borrow(), |x| &x.inner)
     }
-    pub fn propagate(&self) {
+    pub(super) fn propagate(&self) {
         if self.inner.borrow().dirty.take_status() {
-            let data = Rc::new(self.inner.borrow_mut().inner.get_vec());
+            let data = Rc::new(self.inner.borrow_mut().inner.inner.get_vec());
             for sender in &self.inner.borrow().senders {
                 sender.send(Rc::clone(&data))
             }
@@ -107,6 +110,6 @@ where
     C::T: Clone,
 {
     fn clone(&self) -> Self {
-        self.inner.inner.get()
+        self.inner.inner.inner.get()
     }
 }

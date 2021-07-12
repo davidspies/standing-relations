@@ -1,6 +1,6 @@
-use crate::core::{Op_, Relation};
+use crate::core::{relation::RelationInner, Op_, Relation};
 
-pub struct Concat<C1: Op_, C2: Op_<T = C1::T>>(C1, C2);
+pub struct Concat<C1: Op_, C2: Op_<T = C1::T>>(RelationInner<C1>, RelationInner<C2>);
 
 impl<C1: Op_, C2: Op_<T = C1::T>> Op_ for Concat<C1, C2> {
     type T = C1::T;
@@ -20,7 +20,9 @@ impl<C1: Op_> Relation<C1> {
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty.or(other.dirty),
-            inner: Concat(self.inner, other.inner),
+            inner: RelationInner {
+                inner: Concat(self.inner, other.inner),
+            },
         }
     }
 }

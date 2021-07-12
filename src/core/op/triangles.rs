@@ -3,15 +3,17 @@ mod intersection;
 
 use self::bimap::BiMap;
 use crate::{
-    core::{op::triangles::intersection::Intersectable, CountMap, Op, Op_},
+    core::{
+        op::triangles::intersection::Intersectable, relation::RelationInner, CountMap, Op, Op_,
+    },
     Relation,
 };
 use std::hash::Hash;
 
 pub struct Triangles<X, Y, Z, C1: Op<D = (X, Y)>, C2: Op<D = (X, Z)>, C3: Op<D = (Y, Z)>> {
-    c1: C1,
-    c2: C2,
-    c3: C3,
+    c1: RelationInner<C1>,
+    c2: RelationInner<C2>,
+    c3: RelationInner<C3>,
     mapxy: BiMap<X, Y>,
     mapxz: BiMap<X, Z>,
     mapyz: BiMap<Y, Z>,
@@ -76,14 +78,14 @@ impl<X: Clone + Eq + Hash, Y: Clone + Eq + Hash, C1: Op<D = (X, Y)>> Relation<C1
         Relation {
             context_tracker: self.context_tracker,
             dirty: self.dirty.or(rel2.dirty).or(rel3.dirty),
-            inner: Triangles {
+            inner: RelationInner::new(Triangles {
                 c1: self.inner,
                 c2: rel2.inner,
                 c3: rel3.inner,
                 mapxy: BiMap::new(),
                 mapxz: BiMap::new(),
                 mapyz: BiMap::new(),
-            },
+            }),
         }
     }
 }

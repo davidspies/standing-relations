@@ -2,6 +2,7 @@ mod handler_queue;
 pub mod input;
 
 use self::handler_queue::{HandlerPosition, HandlerQueue};
+use crate::core::pipes::CountReceiver;
 use std::{
     cell::RefCell,
     fmt::{self, Debug},
@@ -15,7 +16,12 @@ struct Context<'a> {
 }
 
 pub struct ContextTracker(Rc<RefCell<ContextTrackerInner>>);
-struct ContextTrackerInner;
+struct TrackingInfo {
+    name: String,
+    type_name: String,
+    count: CountReceiver,
+}
+struct ContextTrackerInner(Vec<TrackingInfo>);
 
 impl PartialEq for ContextTracker {
     fn eq(&self, other: &Self) -> bool {
@@ -30,7 +36,7 @@ impl Clone for ContextTracker {
 }
 impl ContextTracker {
     fn new() -> Self {
-        ContextTracker(Rc::new(RefCell::new(ContextTrackerInner)))
+        ContextTracker(Rc::new(RefCell::new(ContextTrackerInner(Vec::new()))))
     }
 }
 impl Debug for ContextTracker {

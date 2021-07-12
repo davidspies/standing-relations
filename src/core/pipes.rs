@@ -1,4 +1,8 @@
-use std::{cell::RefCell, mem, rc::Rc};
+use std::{
+    cell::{Cell, RefCell},
+    mem,
+    rc::{Rc, Weak},
+};
 
 pub struct Sender<T>(Rc<RefCell<Vec<T>>>);
 
@@ -28,4 +32,25 @@ impl<T> Receiver<T> {
 pub fn new<T>() -> (Sender<T>, Receiver<T>) {
     let rc = Rc::new(RefCell::new(Vec::new()));
     (Sender(Rc::clone(&rc)), Receiver(rc))
+}
+
+#[derive(Clone)]
+pub struct CountSender(Weak<Cell<usize>>);
+impl CountSender {
+    pub fn increment(&self) {
+        self.0.upgrade().map(|rc| rc.update(|x| x + 1));
+    }
+}
+
+#[derive(Clone)]
+pub struct CountReceiver(Rc<Cell<usize>>);
+impl CountReceiver {
+    pub fn get(&self) -> usize {
+        self.0.get()
+    }
+}
+
+pub fn new_count() -> (CountSender, CountReceiver) {
+    let rc = Rc::new(Cell::new(0));
+    (CountSender(Rc::downgrade(&rc)), CountReceiver(rc))
 }

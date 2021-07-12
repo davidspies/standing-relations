@@ -1,6 +1,6 @@
 use crate::core::{
-    context::ContextTracker, dirty::DirtyReceive, CountMap, CreationContext, ExecutionContext, Op,
-    Relation,
+    context::ContextTracker, dirty::DirtyReceive, relation::RelationInner, CountMap,
+    CreationContext, ExecutionContext, Op, Relation,
 };
 use std::{
     cell::{Ref, RefCell},
@@ -26,7 +26,7 @@ impl<C: Op> Relation<C> {
 pub struct Output<D, C: Op<D = D>, M: CountMap<D> = HashMap<D, isize>> {
     context_tracker: ContextTracker,
     dirty: DirtyReceive,
-    inner: RefCell<C>,
+    inner: RefCell<RelationInner<C>>,
     data: RefCell<M>,
 }
 
