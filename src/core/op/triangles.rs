@@ -89,6 +89,7 @@ impl<X: Clone + Eq + Hash, Y: Clone + Eq + Hash, C1: Op<D = (X, Y)>> Relation<C1
                 mapxz: BiMap::new(),
                 mapyz: BiMap::new(),
             },
+            vec![self.track_index, rel2.track_index, rel3.track_index],
         )
     }
 }

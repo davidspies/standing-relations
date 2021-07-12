@@ -67,6 +67,7 @@ impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
                 inner: Rc::clone(&inner),
                 receiver: left_receiver,
             },
+            vec![self.track_index.clone()],
         );
         let right_result = self.context_tracker.add_relation(
             right_dirty,
@@ -74,6 +75,7 @@ impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
                 inner,
                 receiver: right_receiver,
             },
+            vec![self.track_index],
         );
         (left_result, right_result)
     }

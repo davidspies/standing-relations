@@ -30,6 +30,7 @@ impl<C: Op_> Relation<C> {
                 inner: self.inner,
                 f,
             },
+            vec![self.track_index],
         )
     }
 }

@@ -95,6 +95,7 @@ impl<C: Op<D = (K, X)>, K: Clone + Eq + Hash, X> Relation<C> {
                 out_map: Default::default(),
                 f,
             },
+            vec![self.track_index],
         )
     }
     pub fn reduce_<M: CountMap<X> + Observable, Y: Clone + Eq, F: Fn(&K, &M) -> Y>(

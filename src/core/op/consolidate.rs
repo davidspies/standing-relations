@@ -24,7 +24,10 @@ where
 
 impl<C: Op_<T = (D, isize)>, D: Eq + Hash> Relation<C> {
     pub fn consolidate(self) -> Relation<Consolidate<C>> {
-        self.context_tracker
-            .add_relation(self.dirty, Consolidate(self.inner))
+        self.context_tracker.add_relation(
+            self.dirty,
+            Consolidate(self.inner),
+            vec![self.track_index],
+        )
     }
 }

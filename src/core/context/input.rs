@@ -83,11 +83,11 @@ impl<'a> CreationContext<'a> {
             handler_queue: Rc::clone(self.0.get_handler_queue()),
             self_index: i,
         };
-        let relation = self
-            .0
-            .tracker
-            .clone()
-            .add_relation(dirty_receive, InputOp(receiver2));
+        let relation =
+            self.0
+                .tracker
+                .clone()
+                .add_relation(dirty_receive, InputOp(receiver2), vec![]);
         (input_sender, relation)
     }
 }

@@ -9,7 +9,7 @@ use crate::core::{
 };
 use std::{
     cell::RefCell,
-    fmt::{self, Debug},
+    fmt::{self, Debug, Display},
     ptr,
     rc::Rc,
 };
@@ -21,12 +21,27 @@ struct Context<'a> {
     handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
 }
 
+#[derive(Clone)]
+pub struct TrackIndex(usize);
+
+impl TrackIndex {
+    fn new(i: usize) -> Self {
+        TrackIndex(i)
+    }
+}
+
+impl Display for TrackIndex {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Display::fmt(&self.0, f)
+    }
+}
+
 pub struct ContextTracker(Rc<RefCell<ContextTrackerInner>>);
 struct TrackingInfo {
     name: String,
     type_name: String,
     count: CountReceiver,
-    position: usize,
+    deps: Vec<TrackIndex>,
 }
 struct ContextTrackerInner(Vec<TrackingInfo>);
 
@@ -45,17 +60,23 @@ impl ContextTracker {
     fn new() -> Self {
         ContextTracker(Rc::new(RefCell::new(ContextTrackerInner(Vec::new()))))
     }
-    pub(super) fn add_relation<C: Op_>(self, dirty: ReceiveBuilder, inner: C) -> Relation<C> {
+    pub(super) fn add_relation<C: Op_>(
+        self,
+        dirty: ReceiveBuilder,
+        inner: C,
+        deps: Vec<TrackIndex>,
+    ) -> Relation<C> {
         let (count_send, count_receive) = pipes::new_count();
-        let position = self.0.borrow().0.len();
+        let track_index = TrackIndex::new(self.0.borrow().0.len());
         self.0.borrow_mut().0.push(TrackingInfo {
-            name: format!("relation{}", position),
+            name: format!("relation{}", track_index),
             type_name: C::get_type_name().to_string(),
             count: count_receive,
-            position,
+            deps,
         });
         Relation {
             context_tracker: self,
+            track_index,
             dirty,
             inner: RelationInner::new(inner, count_send),
         }

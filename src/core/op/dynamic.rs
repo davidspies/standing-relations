@@ -44,7 +44,10 @@ impl<C: Op_> Relation<C> {
     where
         C: 'a,
     {
-        self.context_tracker
-            .add_relation(self.dirty, Dynamic(Box::new(self.inner)))
+        self.context_tracker.add_relation(
+            self.dirty,
+            Dynamic(Box::new(self.inner)),
+            vec![self.track_index],
+        )
     }
 }

@@ -1,10 +1,15 @@
 use crate::{
-    core::{context::ContextTracker, dirty::ReceiveBuilder, Op_},
+    core::{
+        context::{ContextTracker, TrackIndex},
+        dirty::ReceiveBuilder,
+        Op_,
+    },
     pipes::CountSender,
 };
 
 pub struct Relation<C: Op_> {
     pub(super) context_tracker: ContextTracker,
+    pub(super) track_index: TrackIndex,
     pub(super) dirty: ReceiveBuilder,
     pub(super) inner: RelationInner<C>,
 }
