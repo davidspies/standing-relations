@@ -56,14 +56,13 @@ impl<C: Op_> Saved<C> {
             borrowed.senders.push(sender);
             borrowed.dirty.add_target()
         };
-        Relation {
-            context_tracker: self.context_tracker.clone(),
+        self.context_tracker.clone().add_relation(
             dirty,
-            inner: self.context_tracker.add_relation(Save {
+            Save {
                 inner: self.clone(),
                 receiver,
-            }),
-        }
+            },
+        )
     }
     pub(super) fn borrow(&self) -> Ref<RelationInner<C>> {
         Ref::map(self.inner.borrow(), |x| &x.inner)

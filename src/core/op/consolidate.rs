@@ -24,11 +24,7 @@ where
 
 impl<C: Op_<T = (D, isize)>, D: Eq + Hash> Relation<C> {
     pub fn consolidate(self) -> Relation<Consolidate<C>> {
-        let inner = self.context_tracker.add_relation(Consolidate(self.inner));
-        Relation {
-            context_tracker: self.context_tracker,
-            dirty: self.dirty,
-            inner,
-        }
+        self.context_tracker
+            .add_relation(self.dirty, Consolidate(self.inner))
     }
 }

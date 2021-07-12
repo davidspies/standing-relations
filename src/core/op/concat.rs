@@ -20,13 +20,7 @@ impl<C1: Op_> Relation<C1> {
             self.context_tracker, other.context_tracker,
             "Context mismatch"
         );
-        let inner = self
-            .context_tracker
-            .add_relation(Concat(self.inner, other.inner));
-        Relation {
-            context_tracker: self.context_tracker,
-            dirty: self.dirty.or(other.dirty),
-            inner,
-        }
+        self.context_tracker
+            .add_relation(self.dirty.or(other.dirty), Concat(self.inner, other.inner))
     }
 }

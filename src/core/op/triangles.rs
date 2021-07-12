@@ -79,18 +79,16 @@ impl<X: Clone + Eq + Hash, Y: Clone + Eq + Hash, C1: Op<D = (X, Y)>> Relation<C1
             self.context_tracker, rel3.context_tracker,
             "Context mismatch"
         );
-        let inner = self.context_tracker.add_relation(Triangles {
-            c1: self.inner,
-            c2: rel2.inner,
-            c3: rel3.inner,
-            mapxy: BiMap::new(),
-            mapxz: BiMap::new(),
-            mapyz: BiMap::new(),
-        });
-        Relation {
-            context_tracker: self.context_tracker,
-            dirty: self.dirty.or(rel2.dirty).or(rel3.dirty),
-            inner,
-        }
+        self.context_tracker.add_relation(
+            self.dirty.or(rel2.dirty).or(rel3.dirty),
+            Triangles {
+                c1: self.inner,
+                c2: rel2.inner,
+                c3: rel3.inner,
+                mapxy: BiMap::new(),
+                mapxz: BiMap::new(),
+                mapyz: BiMap::new(),
+            },
+        )
     }
 }

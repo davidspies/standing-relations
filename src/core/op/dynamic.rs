@@ -44,13 +44,7 @@ impl<C: Op_> Relation<C> {
     where
         C: 'a,
     {
-        let inner = self
-            .context_tracker
-            .add_relation(Dynamic(Box::new(self.inner)));
-        Relation {
-            context_tracker: self.context_tracker,
-            dirty: self.dirty,
-            inner,
-        }
+        self.context_tracker
+            .add_relation(self.dirty, Dynamic(Box::new(self.inner)))
     }
 }

@@ -24,14 +24,12 @@ impl<C: Op_, I: IntoIterator, F: Fn(C::T) -> I> Op_ for FlatMap<C, I, F> {
 
 impl<C: Op_> Relation<C> {
     pub fn flat_map_<I: IntoIterator, F: Fn(C::T) -> I>(self, f: F) -> Relation<FlatMap<C, I, F>> {
-        let inner = self.context_tracker.add_relation(FlatMap {
-            inner: self.inner,
-            f,
-        });
-        Relation {
-            context_tracker: self.context_tracker,
-            dirty: self.dirty,
-            inner,
-        }
+        self.context_tracker.add_relation(
+            self.dirty,
+            FlatMap {
+                inner: self.inner,
+                f,
+            },
+        )
     }
 }

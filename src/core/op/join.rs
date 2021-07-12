@@ -102,17 +102,15 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<
             self.context_tracker, other.context_tracker,
             "Context mismatch"
         );
-        let inner = self.context_tracker.add_relation(Join {
-            left: self.inner,
-            left_map: HashMap::new(),
-            right: other.inner,
-            right_map: HashMap::new(),
-        });
-        Relation {
-            context_tracker: self.context_tracker,
-            dirty: self.dirty.or(other.dirty),
-            inner,
-        }
+        self.context_tracker.add_relation(
+            self.dirty.or(other.dirty),
+            Join {
+                left: self.inner,
+                left_map: HashMap::new(),
+                right: other.inner,
+                right_map: HashMap::new(),
+            },
+        )
     }
 
     /// Retains only those keys which have count 0 in the argument relation.
@@ -121,16 +119,14 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<
             self.context_tracker, other.context_tracker,
             "Context mismatch"
         );
-        let inner = self.context_tracker.add_relation(AntiJoin {
-            left: self.inner,
-            left_map: HashMap::new(),
-            right: other.inner,
-            right_map: HashMap::new(),
-        });
-        Relation {
-            context_tracker: self.context_tracker,
-            dirty: self.dirty.or(other.dirty),
-            inner,
-        }
+        self.context_tracker.add_relation(
+            self.dirty.or(other.dirty),
+            AntiJoin {
+                left: self.inner,
+                left_map: HashMap::new(),
+                right: other.inner,
+                right_map: HashMap::new(),
+            },
+        )
     }
 }

@@ -61,23 +61,20 @@ impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
             right_sender,
             dirty: this_dirty,
         }));
-        let left_result = Relation {
-            context_tracker: self.context_tracker.clone(),
-            dirty: left_dirty,
-            inner: self.context_tracker.add_relation(Split {
+        let left_result = self.context_tracker.clone().add_relation(
+            left_dirty,
+            Split {
                 inner: Rc::clone(&inner),
                 receiver: left_receiver,
-            }),
-        };
-        let inner = self.context_tracker.add_relation(Split {
-            inner,
-            receiver: right_receiver,
-        });
-        let right_result = Relation {
-            context_tracker: self.context_tracker,
-            dirty: right_dirty,
-            inner,
-        };
+            },
+        );
+        let right_result = self.context_tracker.add_relation(
+            right_dirty,
+            Split {
+                inner,
+                receiver: right_receiver,
+            },
+        );
         (left_result, right_result)
     }
 }

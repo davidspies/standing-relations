@@ -3,8 +3,9 @@ pub mod input;
 
 use self::handler_queue::{HandlerPosition, HandlerQueue};
 use crate::core::{
+    dirty::ReceiveBuilder,
     pipes::{self, CountReceiver},
-    Op_,
+    Op_, Relation,
 };
 use std::{
     cell::RefCell,
@@ -25,6 +26,7 @@ struct TrackingInfo {
     name: String,
     type_name: String,
     count: CountReceiver,
+    position: usize,
 }
 struct ContextTrackerInner(Vec<TrackingInfo>);
 
@@ -43,15 +45,20 @@ impl ContextTracker {
     fn new() -> Self {
         ContextTracker(Rc::new(RefCell::new(ContextTrackerInner(Vec::new()))))
     }
-    pub(super) fn add_relation<C: Op_>(&self, inner: C) -> RelationInner<C> {
+    pub(super) fn add_relation<C: Op_>(self, dirty: ReceiveBuilder, inner: C) -> Relation<C> {
         let (count_send, count_receive) = pipes::new_count();
-        let rel_id = self.0.borrow().0.len();
+        let position = self.0.borrow().0.len();
         self.0.borrow_mut().0.push(TrackingInfo {
-            name: format!("relation{}", rel_id),
+            name: format!("relation{}", position),
             type_name: C::get_type_name().to_string(),
             count: count_receive,
+            position,
         });
-        RelationInner::new(inner, count_send)
+        Relation {
+            context_tracker: self,
+            dirty,
+            inner: RelationInner::new(inner, count_send),
+        }
     }
 }
 impl Debug for ContextTracker {
