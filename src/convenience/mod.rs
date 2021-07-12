@@ -1,5 +1,4 @@
 pub mod concat;
-pub mod consolidate;
 pub mod dynamic;
 pub mod feedback;
 pub mod input;
