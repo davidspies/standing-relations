@@ -13,6 +13,7 @@ impl<C: Op_> Relation<C> {
             log::debug!("{}: {:?}", name, x);
             x
         })
+        .hidden()
     }
 }
 
