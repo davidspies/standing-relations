@@ -35,6 +35,7 @@ impl<C: Op<D = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
                 rx.into_iter().map(move |r| (r, count)),
             )
         })
+        .hidden()
         .split_()
     }
 }

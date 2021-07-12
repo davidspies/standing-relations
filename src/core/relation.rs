@@ -10,6 +10,7 @@ use crate::{
 pub struct Relation<C: Op_> {
     pub(super) context_tracker: ContextTracker,
     pub(super) track_index: TrackIndex,
+    pub(super) shown_index: TrackIndex,
     pub(super) dirty: ReceiveBuilder,
     pub(super) inner: RelationInner<C>,
 }
@@ -27,8 +28,7 @@ impl<C> RelationInner<C> {
 
 impl<C: Op_> RelationInner<C> {
     pub fn foreach(&mut self, f: impl FnMut(C::T)) {
-        let counter = &self.counter;
-        self.inner.foreach(with_counter(counter, f))
+        self.inner.foreach(with_counter(&self.counter, f))
     }
     pub fn get_vec(&mut self) -> Vec<C::T> {
         let mut result = Vec::new();

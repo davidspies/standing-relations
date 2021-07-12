@@ -49,7 +49,7 @@ impl<C: Op_> Saved<C> {
             track_index: rel.track_index,
         }
     }
-    pub fn get(&self) -> Relation<Save<C>>
+    pub fn get_shown(&self) -> Relation<Save<C>>
     where
         C::T: Clone,
     {

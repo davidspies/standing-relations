@@ -1,10 +1,13 @@
 pub mod concat;
+pub mod consolidate;
+pub mod dynamic;
 pub mod feedback;
 pub mod input;
 pub mod join;
 pub mod map;
 pub mod output;
 pub mod reduce;
+pub mod save;
 pub mod split;
 
 use crate::{Dynamic, Op, Relation, Saved};

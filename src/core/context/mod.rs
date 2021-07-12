@@ -1,91 +1,14 @@
 mod handler_queue;
 pub mod input;
+mod tracking;
 
 use self::handler_queue::{HandlerPosition, HandlerQueue};
-use crate::core::{
-    dirty::ReceiveBuilder,
-    pipes::{self, CountReceiver},
-    Op_, Relation,
-};
-use std::{
-    cell::RefCell,
-    fmt::{self, Debug, Display},
-    ptr,
-    rc::Rc,
-};
-
-use super::relation::RelationInner;
+pub use self::tracking::{ContextTracker, TrackIndex};
+use std::{cell::RefCell, rc::Rc};
 
 struct Context<'a> {
     tracker: ContextTracker,
     handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
-}
-
-#[derive(Clone)]
-pub struct TrackIndex(usize);
-
-impl TrackIndex {
-    fn new(i: usize) -> Self {
-        TrackIndex(i)
-    }
-}
-
-impl Display for TrackIndex {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.0, f)
-    }
-}
-
-pub struct ContextTracker(Rc<RefCell<ContextTrackerInner>>);
-struct TrackingInfo {
-    name: String,
-    type_name: String,
-    count: CountReceiver,
-    deps: Vec<TrackIndex>,
-}
-struct ContextTrackerInner(Vec<TrackingInfo>);
-
-impl PartialEq for ContextTracker {
-    fn eq(&self, other: &Self) -> bool {
-        ptr::eq(self.0.as_ptr(), other.0.as_ptr())
-    }
-}
-impl Eq for ContextTracker {}
-impl Clone for ContextTracker {
-    fn clone(&self) -> Self {
-        Self(Rc::clone(&self.0))
-    }
-}
-impl ContextTracker {
-    fn new() -> Self {
-        ContextTracker(Rc::new(RefCell::new(ContextTrackerInner(Vec::new()))))
-    }
-    pub(super) fn add_relation<C: Op_>(
-        self,
-        dirty: ReceiveBuilder,
-        inner: C,
-        deps: Vec<TrackIndex>,
-    ) -> Relation<C> {
-        let (count_send, count_receive) = pipes::new_count();
-        let track_index = TrackIndex::new(self.0.borrow().0.len());
-        self.0.borrow_mut().0.push(TrackingInfo {
-            name: format!("relation{}", track_index),
-            type_name: C::get_type_name().to_string(),
-            count: count_receive,
-            deps,
-        });
-        Relation {
-            context_tracker: self,
-            track_index,
-            dirty,
-            inner: RelationInner::new(inner, count_send),
-        }
-    }
-}
-impl Debug for ContextTracker {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:?}", self.0.as_ptr())
-    }
 }
 
 impl<'a> Context<'a> {
