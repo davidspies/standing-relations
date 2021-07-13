@@ -16,7 +16,10 @@ where
             .type_named("counts")
     }
     pub fn distinct(self) -> Relation<impl Op<D = C::D>> {
-        self.counts().type_named("distinct").map_h(|(x, _)| x)
+        self.map_h(|x| (x, ()))
+            .reduce_(|_, _: &isize| ())
+            .map_h(|(x, ())| x)
+            .type_named("distinct")
     }
 }
 
