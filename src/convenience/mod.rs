@@ -5,6 +5,7 @@ pub mod input;
 pub mod join;
 pub mod map;
 pub mod output;
+pub mod pair;
 pub mod reduce;
 pub mod save;
 pub mod split;

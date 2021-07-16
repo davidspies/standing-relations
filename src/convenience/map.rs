@@ -1,4 +1,4 @@
-use crate::{Op, Op_, Relation};
+use crate::{pair::Pair, Op, Op_, Relation};
 use std::{fmt::Debug, iter, ops::Neg};
 
 impl<C: Op_> Relation<C> {
@@ -45,5 +45,17 @@ impl<C: Op> Relation<C> {
 
     pub fn negate(self) -> Relation<impl Op<D = C::D>> {
         self.map_counts(Neg::neg).type_named("negate")
+    }
+}
+
+impl<A, B, C: Op<D = (A, B)>> Relation<C> {
+    pub fn fsts(self) -> Relation<impl Op<D = A>> {
+        self.map_h(Pair::fst)
+    }
+    pub fn snds(self) -> Relation<impl Op<D = B>> {
+        self.map_h(Pair::snd)
+    }
+    pub fn swaps(self) -> Relation<impl Op<D = (B, A)>> {
+        self.map_h(Pair::swap)
     }
 }

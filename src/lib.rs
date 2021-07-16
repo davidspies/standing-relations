@@ -4,15 +4,17 @@ mod convenience;
 pub mod core;
 mod feedback;
 
-pub use self::convenience::{
-    input::{Input, InputRelation},
-    Collection, Is,
+pub use self::{
+    convenience::{
+        input::{Input, InputRelation},
+        pair, Collection, Is,
+    },
+    core::{
+        pipes, CountMap, Dynamic, Input_, IsReduce, Observable, Op, Op_, Output, ReduceProbe,
+        Relation, Save, Saved,
+    },
+    feedback::{ContextTracker, CreationContext, ExecutionContext},
 };
-pub use self::core::{
-    pipes, CountMap, Dynamic, Input_, IsReduce, Observable, Op, Op_, Output, ReduceProbe, Relation,
-    Save, Saved,
-};
-pub use self::feedback::{ContextTracker, CreationContext, ExecutionContext};
 
 #[cfg(test)]
 mod tests;

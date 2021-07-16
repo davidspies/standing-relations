@@ -8,21 +8,15 @@ digraph flow {
   node4 -> node6;
   node7 [label=< starting_values <br/> split <br/> 5478 >];
   node4 -> node7;
-  node10 [label=< next_positions <br/> map <br/> 16167 >];
-  node6 -> node10;
   node11 [label=< outcomes <br/> input <br/> 12414 >];
-  node13 [label=< relation13 <br/> map <br/> 16167 >];
-  node6 -> node13;
-  node14 [label=< relation14 <br/> join <br/> 36591 >];
-  node13 -> node14;
+  node14 [label=< child_outcomes <br/> join <br/> 36591 >];
+  node6 -> node14;
   node11 -> node14;
-  node15 [label=< child_outcomes <br/> map <br/> 36591 >];
-  node14 -> node15;
   node16 [label=< nonterminal_outcomes <br/> reduce <br/> 6740 >];
-  node15 -> node16;
+  node14 -> node16;
   node18 [label=< relation18 <br/> flat_map <br/> 6936 >];
   node16 -> node18;
-  node10 -> node0 [style=dotted];
+  node6 -> node0 [style=dotted];
   node7 -> node11 [style=dotted];
   node18 -> node11 [style=dotted];
 }

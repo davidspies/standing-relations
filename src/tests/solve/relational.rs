@@ -41,9 +41,8 @@ pub fn solve<Game: IsGame>(
         .split();
     let pos_children = pos_children.named("pos_children").collect();
     let starting_values = starting_values.named("starting_values");
-    let next_positions = pos_children.get().map(|(_, c)| c).named("next_positions");
 
-    context.feed(next_positions, position_inp.clone());
+    context.feed(pos_children.get().snds(), position_inp.clone());
 
     let (outcome_inp, outcomes) = context.new_input();
     let outcomes = outcomes.named("outcomes");
@@ -51,9 +50,8 @@ pub fn solve<Game: IsGame>(
 
     let child_outcomes = pos_children
         .get()
-        .map(|(p, c)| (c, p))
-        .join(outcomes)
-        .map(|(_, p, o)| (p, o))
+        .swaps()
+        .join_values(outcomes)
         .named("child_outcomes");
 
     let output_probe = child_outcomes

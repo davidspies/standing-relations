@@ -26,3 +26,12 @@ where
             .type_named("set_minus")
     }
 }
+
+impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C: Op<D = (K, V1)>> Relation<C> {
+    pub fn join_values<V2: Clone + Eq + Hash>(
+        self,
+        other: Relation<impl Op<D = (K, V2)>>,
+    ) -> Relation<impl Op<D = (V1, V2)>> {
+        self.join(other).map_h(|(_, v1, v2)| (v1, v2))
+    }
+}
