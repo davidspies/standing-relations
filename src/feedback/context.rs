@@ -12,7 +12,7 @@ use std::{
     sync::Arc,
 };
 
-pub struct CreationContext<'a, I> {
+pub struct CreationContext<'a, I = ()> {
     inner: core::CreationContext<'a>,
     feeders: Vec<Box<dyn IsFeeder<'a, I> + 'a>>,
     extra_edges: Vec<(TrackIndex, TrackIndex)>,
@@ -20,7 +20,7 @@ pub struct CreationContext<'a, I> {
     dirty_receive: Receiver<usize>,
 }
 
-pub struct ExecutionContext<'a, I> {
+pub struct ExecutionContext<'a, I = ()> {
     inner: core::ExecutionContext<'a>,
     feeders: Vec<Box<dyn IsFeeder<'a, I> + 'a>>,
     extra_edges: Arc<Vec<(TrackIndex, TrackIndex)>>,
