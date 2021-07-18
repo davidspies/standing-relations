@@ -39,7 +39,7 @@ impl<'a> CreationContext<'a> {
     pub fn begin(self) -> ExecutionContext<'a> {
         ExecutionContext(self.0)
     }
-    pub(in crate::core) fn get_tracker(&self) -> &ContextTracker {
+    pub fn get_tracker(&self) -> &ContextTracker {
         &self.0.tracker
     }
 }

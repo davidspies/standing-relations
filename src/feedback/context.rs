@@ -9,13 +9,13 @@ use crate::{
 use std::{
     io::{self, Write},
     ops::Deref,
-    sync::Arc,
+    sync::{Arc, RwLock},
 };
 
 pub struct CreationContext<'a, I = ()> {
     inner: core::CreationContext<'a>,
     feeders: Vec<Box<dyn IsFeeder<'a, I> + 'a>>,
-    extra_edges: Vec<(TrackIndex, TrackIndex)>,
+    extra_edges: Arc<RwLock<Vec<(TrackIndex, TrackIndex)>>>,
     dirty_send: Sender<usize>,
     dirty_receive: Receiver<usize>,
 }
@@ -23,18 +23,19 @@ pub struct CreationContext<'a, I = ()> {
 pub struct ExecutionContext<'a, I = ()> {
     inner: core::ExecutionContext<'a>,
     feeders: Vec<Box<dyn IsFeeder<'a, I> + 'a>>,
-    extra_edges: Arc<Vec<(TrackIndex, TrackIndex)>>,
+    extra_edges: Arc<RwLock<Vec<(TrackIndex, TrackIndex)>>>,
     dirty: PQReceiver,
 }
 
 pub struct ContextTracker {
     inner: core::ContextTracker,
-    extra_edges: Arc<Vec<(TrackIndex, TrackIndex)>>,
+    extra_edges: Arc<RwLock<Vec<(TrackIndex, TrackIndex)>>>,
 }
 
 impl ContextTracker {
     pub fn dump_dot(&self, file: impl Write) -> Result<(), io::Error> {
-        self.inner.dump_dot(file, &self.extra_edges)
+        self.inner
+            .dump_dot(file, &*self.extra_edges.read().unwrap())
     }
 }
 
@@ -66,7 +67,7 @@ impl<'a, I> CreationContext<'a, I> {
         CreationContext {
             inner: core::CreationContext::new(),
             feeders: Vec::new(),
-            extra_edges: Vec::new(),
+            extra_edges: Arc::new(RwLock::new(Vec::new())),
             dirty_send,
             dirty_receive,
         }
@@ -75,7 +76,7 @@ impl<'a, I> CreationContext<'a, I> {
         ExecutionContext {
             inner: self.inner.begin(),
             feeders: self.feeders,
-            extra_edges: Arc::new(self.extra_edges),
+            extra_edges: self.extra_edges,
             dirty: PQReceiver::new(self.dirty_receive),
         }
     }
@@ -89,7 +90,13 @@ impl<'a, I> CreationContext<'a, I> {
         feeder.add_listener(self, move || cloned.send(i));
         self.feeders.push(Box::new(feeder));
         if let Some(edge) = extra_edge {
-            self.extra_edges.push(edge);
+            self.extra_edges.write().unwrap().push(edge);
+        }
+    }
+    pub fn get_tracker(&self) -> ContextTracker {
+        ContextTracker {
+            inner: self.inner.get_tracker().clone(),
+            extra_edges: self.extra_edges.clone(),
         }
     }
 }
