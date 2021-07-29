@@ -1,4 +1,4 @@
-use crate::{Op, Relation};
+use crate::{pair::Pair, Op, Relation};
 use std::hash::Hash;
 
 impl<K: Clone + Eq + Hash, V: Clone + Eq + Hash, C: Op<D = (K, V)>> Relation<C> {
@@ -6,6 +6,29 @@ impl<K: Clone + Eq + Hash, V: Clone + Eq + Hash, C: Op<D = (K, V)>> Relation<C> 
         self.join(other.map_h(|x| (x, ())))
             .map_h(|(k, v, ())| (k, v))
             .type_named("semijoin")
+    }
+    pub fn join_values<V2: Clone + Eq + Hash>(
+        self,
+        other: Relation<impl Op<D = (K, V2)>>,
+    ) -> Relation<impl Op<D = (V, V2)>> {
+        self.join(other).map_h(|(_, v1, v2)| (v1, v2))
+    }
+    pub fn left_join<V2: Clone + Eq + Hash>(
+        self,
+        other: Relation<impl Op<D = (K, V2)>>,
+    ) -> Relation<impl Op<D = (K, V, Option<V2>)>> {
+        let self_saved = self.save();
+        let other_saved = other.save();
+        self_saved
+            .get()
+            .join(other_saved.get())
+            .map(|(k, l, r)| (k, l, Some(r)))
+            .concat(
+                self_saved
+                    .get()
+                    .antijoin(other_saved.get().map(Pair::fst))
+                    .map(|(k, l)| (k, l, None)),
+            )
     }
 }
 
@@ -24,14 +47,5 @@ where
             .antijoin(other)
             .map_h(|(x, ())| x)
             .type_named("set_minus")
-    }
-}
-
-impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C: Op<D = (K, V1)>> Relation<C> {
-    pub fn join_values<V2: Clone + Eq + Hash>(
-        self,
-        other: Relation<impl Op<D = (K, V2)>>,
-    ) -> Relation<impl Op<D = (V1, V2)>> {
-        self.join(other).map_h(|(_, v1, v2)| (v1, v2))
     }
 }

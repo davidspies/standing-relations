@@ -128,7 +128,7 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<
                 right: other.inner,
                 right_map: HashMap::new(),
             },
-            vec![self.track_index, other.track_index]
+            vec![self.track_index, other.track_index],
         )
     }
 }
