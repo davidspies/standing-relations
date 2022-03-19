@@ -40,7 +40,7 @@ pub fn new() -> (DirtySend, ReceiveBuilder) {
 }
 
 impl ReceiveBuilder {
-    pub fn to_receive(self) -> DirtyReceive {
+    pub fn into_receive(self) -> DirtyReceive {
         let result = Rc::new(RefCell::new(Node {
             dirty: false,
             targets: RcCollection::new(),

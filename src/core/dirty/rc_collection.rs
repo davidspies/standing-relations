@@ -5,12 +5,18 @@ pub struct RcCollection<T: ?Sized> {
     contained: HashSet<*const T>,
 }
 
+impl<T: ?Sized> Default for RcCollection<T> {
+    fn default() -> Self {
+        Self {
+            iterable: Default::default(),
+            contained: Default::default(),
+        }
+    }
+}
+
 impl<T: ?Sized> RcCollection<T> {
     pub fn new() -> Self {
-        RcCollection {
-            iterable: Vec::new(),
-            contained: HashSet::new(),
-        }
+        Default::default()
     }
     pub fn insert(&mut self, x: Rc<T>) -> bool {
         let inserted = self.contained.insert(Rc::as_ptr(&x));

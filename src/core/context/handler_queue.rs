@@ -12,18 +12,13 @@ struct Handler<'a> {
     is_queued: bool,
 }
 
+#[derive(Default)]
 pub struct HandlerQueue<'a> {
     handlers: Vec<Handler<'a>>,
     queued_handler_inds: Vec<usize>,
 }
 
 impl<'a> HandlerQueue<'a> {
-    pub fn new() -> Self {
-        HandlerQueue {
-            handlers: Vec::new(),
-            queued_handler_inds: Vec::new(),
-        }
-    }
     fn add_handler(&mut self, handler: impl IsInputHandler + 'a) -> HandlerPosition {
         let pos = self.handlers.len();
         self.handlers.push(Handler {

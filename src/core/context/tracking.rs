@@ -22,7 +22,7 @@ impl Display for TrackIndex {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ContextTracker(Arc<RwLock<ContextTrackerInner>>);
 struct TrackingInfo {
     name: String,
@@ -31,6 +31,8 @@ struct TrackingInfo {
     count: CountReceiver,
     deps: Vec<TrackIndex>,
 }
+
+#[derive(Default)]
 struct ContextTrackerInner(Vec<TrackingInfo>);
 
 impl PartialEq for ContextTracker {
@@ -40,9 +42,6 @@ impl PartialEq for ContextTracker {
 }
 impl Eq for ContextTracker {}
 impl ContextTracker {
-    pub(super) fn new() -> Self {
-        ContextTracker(Arc::new(RwLock::new(ContextTrackerInner(Vec::new()))))
-    }
     pub(in crate::core) fn add_relation<C: Op_>(
         self,
         dirty: ReceiveBuilder,
@@ -123,8 +122,8 @@ impl ContextTrackerInner {
             writeln!(
                 file,
                 "  node{} -> node{} [style=dotted];",
-                self.find_shown_index(&i),
-                self.find_shown_index(&j)
+                self.find_shown_index(i),
+                self.find_shown_index(j)
             )?;
         }
         writeln!(file, "}}")

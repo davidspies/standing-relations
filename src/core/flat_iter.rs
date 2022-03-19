@@ -1,5 +1,3 @@
-use std::convert::identity;
-
 pub trait IntoFlatIterator {
     type IntoFlatIter;
 
@@ -10,6 +8,6 @@ impl<I: IntoIterator<Item = J>, J: IntoIterator> IntoFlatIterator for I {
     type IntoFlatIter = impl Iterator<Item = J::Item>;
 
     fn into_flat_iter(self) -> Self::IntoFlatIter {
-        self.into_iter().flat_map(identity)
+        self.into_iter().flatten()
     }
 }

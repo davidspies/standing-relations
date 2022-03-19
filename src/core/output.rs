@@ -19,7 +19,7 @@ impl<C: Op> Relation<C> {
         Output {
             context_tracker: self.context_tracker,
             track_index: self.track_index,
-            dirty: self.dirty.to_receive(),
+            dirty: self.dirty.into_receive(),
             inner: RefCell::new(self.inner),
             data: RefCell::new(M::empty()),
         }

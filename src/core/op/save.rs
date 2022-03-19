@@ -44,7 +44,7 @@ impl<C: Op_> Saved<C> {
             inner: Rc::new(RefCell::new(SaveInner {
                 inner: rel.inner,
                 senders: Vec::new(),
-                dirty: rel.dirty.to_receive(),
+                dirty: rel.dirty.into_receive(),
             })),
             track_index: rel.track_index,
         }

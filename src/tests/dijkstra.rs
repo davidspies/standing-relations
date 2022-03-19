@@ -18,15 +18,16 @@ fn dijkstra<'a, Node: Eq + Hash + Clone + 'a>(
     // The start node has distance 0
     context.feed(start_relation.map(|x| (x, 0)), dists_input.clone());
     // Stop as soon as the dists collection contains the end node
-    context.interrupt(dists.get().semijoin(end_relation).get_output(&context), |m| {
-        m.keys().next().unwrap().1
-    });
+    context.interrupt(
+        dists.get().semijoin(end_relation).get_output(&context),
+        |m| m.keys().next().unwrap().1,
+    );
     // Discover new connections via a `Relation::join` and feed them back in. Lower distances take
     // priority over higher ones.
     // Note that if we change this from `feed_ordered` to `feed`, this will become to a
     // breadth-first search and not necessarily find the lowest-weight path. This could be rectified
     // by moving the `interrupt` call to come after all the `feed` calls giving it lower priority,
-    // but that would force the entire graph to be discovered before any answer can be returned. 
+    // but that would force the entire graph to be discovered before any answer can be returned.
     context.feed_ordered(
         dists
             .get()

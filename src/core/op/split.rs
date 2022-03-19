@@ -50,7 +50,7 @@ impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
         Relation<Split<LI, C, LI, RI>>,
         Relation<Split<RI, C, LI, RI>>,
     ) {
-        let mut this_dirty = self.dirty.to_receive();
+        let mut this_dirty = self.dirty.into_receive();
         let left_dirty = this_dirty.add_target();
         let right_dirty = this_dirty.add_target();
         let (left_sender, left_receiver) = pipes::new();

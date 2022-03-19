@@ -141,7 +141,7 @@ impl<'a, I> CreationContext<'a, I> {
         );
         self.add_feeder(
             FeedbackOnce {
-                output: rel.get_output_(&self),
+                output: rel.get_output_(self),
                 input,
             },
             Some(edge),
@@ -164,7 +164,7 @@ impl<'a, I> CreationContext<'a, I> {
         );
         self.add_feeder(
             FeedbackOrdered {
-                output: rel.get_output_(&self),
+                output: rel.get_output_(self),
                 input,
             },
             Some(edge),

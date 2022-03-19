@@ -20,6 +20,19 @@ pub struct CreationContext<'a, I = ()> {
     dirty_receive: Receiver<usize>,
 }
 
+impl<I> Default for CreationContext<'_, I> {
+    fn default() -> Self {
+        let (dirty_send, dirty_receive) = pipes::new();
+        Self {
+            inner: Default::default(),
+            feeders: Default::default(),
+            extra_edges: Default::default(),
+            dirty_send,
+            dirty_receive,
+        }
+    }
+}
+
 pub struct ExecutionContext<'a, I = ()> {
     inner: core::ExecutionContext<'a>,
     feeders: Vec<Box<dyn IsFeeder<'a, I> + 'a>>,
@@ -63,14 +76,7 @@ impl<'a, I> ExecutionContext<'a, I> {
 
 impl<'a, I> CreationContext<'a, I> {
     pub fn new_() -> Self {
-        let (dirty_send, dirty_receive) = pipes::new();
-        CreationContext {
-            inner: core::CreationContext::new(),
-            feeders: Vec::new(),
-            extra_edges: Arc::new(RwLock::new(Vec::new())),
-            dirty_send,
-            dirty_receive,
-        }
+        Default::default()
     }
     pub fn begin(self) -> ExecutionContext<'a, I> {
         ExecutionContext {
