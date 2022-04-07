@@ -19,7 +19,11 @@ impl<'a, D: Clone + 'a> Input<'a, D> {
     pub fn remove(&mut self, context: &ExecutionContext<'a>, x: D) {
         self.update(context, x, -1)
     }
-    pub fn remove_all(&mut self, context: &ExecutionContext<'a>, data: impl IntoIterator<Item = D>) {
+    pub fn remove_all(
+        &mut self,
+        context: &ExecutionContext<'a>,
+        data: impl IntoIterator<Item = D>,
+    ) {
         self.send_all(context, data.into_iter().map(|x| (x, -1)));
     }
 }
