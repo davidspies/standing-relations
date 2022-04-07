@@ -3,9 +3,11 @@ use std::{
     hash::Hash,
 };
 
-pub trait CountMap<K>: Sized {
+pub trait CountMap<K>: Default + Sized {
     fn add(&mut self, k: K, count: isize);
-    fn empty() -> Self;
+    fn empty() -> Self {
+        Self::default()
+    }
     fn singleton(k: K, count: isize) -> Self {
         let mut result: Self = Self::empty();
         result.add(k, count);
@@ -36,10 +38,6 @@ impl<K1: Eq + Hash, K2, M: CountMap<K2> + Observable> CountMap<(K1, K2)> for Has
             }
         }
     }
-
-    fn empty() -> Self {
-        HashMap::new()
-    }
 }
 
 impl<K, V> Observable for HashMap<K, V> {
@@ -67,10 +65,6 @@ impl<K1: Eq + Ord, K2, M: CountMap<K2> + Observable> CountMap<(K1, K2)> for BTre
             }
         }
     }
-
-    fn empty() -> Self {
-        BTreeMap::new()
-    }
 }
 
 impl<K, V> Observable for BTreeMap<K, V> {
@@ -82,10 +76,6 @@ impl<K, V> Observable for BTreeMap<K, V> {
 impl CountMap<()> for isize {
     fn add(&mut self, (): (), count: isize) {
         *self += count
-    }
-
-    fn empty() -> Self {
-        0
     }
 }
 
@@ -99,18 +89,10 @@ impl<K: Eq + Hash> CountMap<K> for HashMap<K, isize> {
     fn add(&mut self, k: K, count: isize) {
         CountMap::<(K, ())>::add(self, (k, ()), count)
     }
-
-    fn empty() -> Self {
-        CountMap::<(K, ())>::empty()
-    }
 }
 
 impl<K: Ord> CountMap<K> for BTreeMap<K, isize> {
     fn add(&mut self, k: K, count: isize) {
         CountMap::<(K, ())>::add(self, (k, ()), count)
-    }
-
-    fn empty() -> Self {
-        CountMap::<(K, ())>::empty()
     }
 }

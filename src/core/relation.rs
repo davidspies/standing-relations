@@ -28,7 +28,7 @@ impl<C> RelationInner<C> {
 
 impl<C: Op_> RelationInner<C> {
     pub fn foreach(&mut self, f: impl FnMut(C::T)) {
-        self.inner.foreach(with_counter(&self.counter, f))
+        self.inner.foreach(with_counter(&mut self.counter, f))
     }
     pub fn get_vec(&mut self) -> Vec<C::T> {
         let mut result = Vec::new();
@@ -38,7 +38,7 @@ impl<C: Op_> RelationInner<C> {
 }
 
 pub(super) fn with_counter<'a, T>(
-    counter: &'a CountSender,
+    counter: &'a mut CountSender,
     mut f: impl FnMut(T) + 'a,
 ) -> impl FnMut(T) + 'a {
     move |x| {
@@ -48,7 +48,22 @@ pub(super) fn with_counter<'a, T>(
 }
 
 impl<C: Op_> Relation<C> {
-    pub fn get_track_index(&self) -> &TrackIndex {
-        &self.track_index
+    pub fn get_track_index(&self) -> TrackIndex {
+        self.track_index
+    }
+    pub fn named(mut self, name: &str) -> Self {
+        self.context_tracker
+            .set_name(self.shown_index, name.to_string());
+        self
+    }
+    pub fn type_named(mut self, type_name: &str) -> Self {
+        self.context_tracker
+            .set_type_name(self.shown_index, type_name.to_string());
+        self
+    }
+    pub fn hidden(mut self) -> Self {
+        self.context_tracker.set_hidden(self.shown_index);
+        self.shown_index = self.context_tracker.find_shown_index(self.shown_index);
+        self
     }
 }

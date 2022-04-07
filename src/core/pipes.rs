@@ -19,29 +19,29 @@ impl<T> Clone for Sender<T> {
 pub struct Receiver<T>(Rc<RefCell<Vec<T>>>);
 
 impl<T> Sender<T> {
-    pub fn send(&self, data: T) {
+    pub fn send(&mut self, data: T) {
         self.0.borrow_mut().push(data)
     }
-    pub fn send_all(&self, data: impl IntoIterator<Item = T>) {
+    pub fn send_all(&mut self, data: impl IntoIterator<Item = T>) {
         self.0.borrow_mut().extend(data)
     }
 }
 
 impl<T> Receiver<T> {
-    pub fn receive(&self) -> Vec<T> {
+    pub fn receive(&mut self) -> Vec<T> {
         mem::take(&mut self.0.borrow_mut())
     }
 }
 
 pub fn new<T>() -> (Sender<T>, Receiver<T>) {
-    let rc = Rc::new(RefCell::new(Vec::new()));
+    let rc = Default::default();
     (Sender(Rc::clone(&rc)), Receiver(rc))
 }
 
 #[derive(Clone)]
 pub struct CountSender(Arc<AtomicUsize>);
 impl CountSender {
-    pub fn increment(&self) {
+    pub fn increment(&mut self) {
         self.0.fetch_add(1, Ordering::Relaxed);
     }
 }

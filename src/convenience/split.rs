@@ -1,9 +1,7 @@
 use crate::{Op, Relation};
 
-impl<C: Op<D = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
+impl<C: Op<D = (L, R)>, L, R> Relation<C> {
     /// Splits a collection of 2-tuples into a 2-tuple of collections.
-    ///
-    /// Note that the argument's elements are iterators which get flat-mapped into the outputs.
     ///
     /// Example:
     ///
@@ -11,31 +9,21 @@ impl<C: Op<D = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
     ///    use standing_relations::CreationContext;
     ///    use std::{collections::HashMap, iter::FromIterator};
     ///
-    ///    let context = CreationContext::new();
-    ///    let (foo_input, foo) = context.new_input::<usize>();
-    ///    let (evens, odds) = foo.map(|x| if x % 2 == 0 {(Some(x), None)} else {(None, Some(x))}).split();
+    ///    let mut context = CreationContext::new();
+    ///    let (mut foo_input, foo) = context.new_input::<usize>();
+    ///    let (evens, odds) = foo.map(|x| (x * 2, x * 2 + 1)).split();
     ///    let evens = evens.get_output(&context);
     ///    let odds = odds.get_output(&context);
     ///    
     ///    let mut context = context.begin();
-    ///    foo_input.add_all(&context, 1 ..= 4);
+    ///    foo_input.add_all(&context, 0 .. 2);
     ///    context.commit();
-    ///    assert_eq!(&*evens.get(&context), &HashMap::from_iter(vec![(2,1),(4,1)]));
+    ///    assert_eq!(&*evens.get(&context), &HashMap::from_iter(vec![(0,1),(2,1)]));
     ///    assert_eq!(&*odds.get(&context), &HashMap::from_iter(vec![(1,1),(3,1)]));
     /// ```
-    pub fn split(
-        self,
-    ) -> (
-        Relation<impl Op<D = LI::Item>>,
-        Relation<impl Op<D = RI::Item>>,
-    ) {
-        self.map_(|((lx, rx), count)| {
-            (
-                lx.into_iter().map(move |l| (l, count)),
-                rx.into_iter().map(move |r| (r, count)),
-            )
-        })
-        .hidden()
-        .split_()
+    pub fn split(self) -> (Relation<impl Op<D = L>>, Relation<impl Op<D = R>>) {
+        self.map_(|((lx, rx), count)| ((lx, count), (rx, count)))
+            .hidden()
+            .split_()
     }
 }

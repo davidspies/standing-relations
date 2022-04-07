@@ -35,7 +35,7 @@ where
     ///    use standing_relations::CreationContext;
     ///    use std::{collections::HashMap, iter::FromIterator};
     ///
-    ///    let context = CreationContext::new();
+    ///    let mut context = CreationContext::new();
     ///    let (_foo_input, foo) = context.new_input::<(char, isize)>();
     ///    let (_bar_input, bar) = context.new_input::<char>();
     ///    let foobar =

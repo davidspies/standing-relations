@@ -9,14 +9,19 @@ pub struct BiMap<X, Y> {
     backward: HashMap<Y, HashMap<X, isize>>,
 }
 
+impl<X, Y> Default for BiMap<X, Y> {
+    fn default() -> Self {
+        Self {
+            forward: Default::default(),
+            backward: Default::default(),
+        }
+    }
+}
+
 impl<X: Eq + Hash + Clone, Y: Eq + Hash + Clone> CountMap<(X, Y)> for BiMap<X, Y> {
     fn add(&mut self, (x, y): (X, Y), count: isize) {
         self.forward.add((x.clone(), y.clone()), count);
         self.backward.add((y, x), count);
-    }
-
-    fn empty() -> Self {
-        Self::new()
     }
 }
 

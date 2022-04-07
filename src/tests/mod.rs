@@ -12,8 +12,8 @@ mod ttt;
 
 #[test]
 fn it_works() {
-    let context = CreationContext::new();
-    let (inp, rel) = context.new_input::<char>();
+    let mut context = CreationContext::new();
+    let (mut inp, rel) = context.new_input::<char>();
     let rel = rel.save();
     let concatted = rel.get().concat(rel.get()).t::<char>();
     let outp = concatted.get_output(&context);
@@ -35,7 +35,7 @@ fn it_works() {
 #[test]
 fn feed_ordered() {
     let mut context = CreationContext::new();
-    let (inp, rel) = context.new_input::<((), usize)>();
+    let (mut inp, rel) = context.new_input::<((), usize)>();
     let rel = rel.group_min().save();
     let outp = rel.get().get_output(&context);
     context.feed_ordered(rel.get().map(|(c, i)| (i, (c, i + 1))), inp.clone());

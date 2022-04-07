@@ -10,7 +10,7 @@ impl<'b, T> Op_ for Dynamic<'b, T> {
 
     fn foreach<'a>(&'a mut self, continuation: impl FnMut(Self::T) + 'a) {
         self.0.inner.foreach(Box::new(relation::with_counter(
-            &self.0.counter,
+            &mut self.0.counter,
             continuation,
         )))
     }

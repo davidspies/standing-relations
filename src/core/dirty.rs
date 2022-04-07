@@ -7,7 +7,9 @@ pub struct ReceiveBuilder(RcCollection<RefCell<dyn IsNode>>);
 pub struct DirtySend(Rc<RefCell<SendNode>>);
 pub struct DirtyReceive(Rc<RefCell<Node>>);
 
+#[derive(Default)]
 struct SendNode(Option<Rc<RefCell<Node>>>);
+#[derive(Default)]
 struct Node {
     dirty: bool,
     targets: RcCollection<RefCell<Node>>,
@@ -32,7 +34,7 @@ impl IsNode for Node {
 }
 
 pub fn new() -> (DirtySend, ReceiveBuilder) {
-    let send_node = Rc::new(RefCell::new(SendNode(None)));
+    let send_node = Default::default();
     (
         DirtySend(Rc::clone(&send_node)),
         ReceiveBuilder(RcCollection::singleton(send_node)),
@@ -41,11 +43,7 @@ pub fn new() -> (DirtySend, ReceiveBuilder) {
 
 impl ReceiveBuilder {
     pub fn into_receive(self) -> DirtyReceive {
-        let result = Rc::new(RefCell::new(Node {
-            dirty: false,
-            targets: RcCollection::new(),
-            on_dirty: Vec::new(),
-        }));
+        let result = Default::default();
         for t in self.0 {
             t.borrow_mut().add_target(Rc::clone(&result));
         }
@@ -64,7 +62,7 @@ impl DirtyReceive {
             Rc::clone(&self.0) as Rc<RefCell<dyn IsNode>>
         ))
     }
-    pub fn take_status(&self) -> bool {
+    pub fn take_status(&mut self) -> bool {
         let dirty = self.0.borrow().dirty;
         if dirty {
             self.0.borrow_mut().dirty = false;
@@ -79,14 +77,14 @@ impl DirtyReceive {
 fn set_dirty_inner(this: &Rc<RefCell<Node>>) {
     if !this.borrow().dirty {
         {
-            let mut borrowed_mut = this.borrow_mut();
-            borrowed_mut.dirty = true;
-            for f in &mut borrowed_mut.on_dirty {
+            let mut this = this.borrow_mut();
+            this.dirty = true;
+            for f in &mut this.on_dirty {
                 f()
             }
-        }
-        for target in &this.borrow().targets {
-            set_dirty_inner(target);
+            for target in &this.targets {
+                set_dirty_inner(target);
+            }
         }
     }
 }

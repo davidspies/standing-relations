@@ -7,7 +7,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct TrackIndex(usize);
 
 impl TrackIndex {
@@ -59,7 +59,7 @@ impl ContextTracker {
         });
         Relation {
             context_tracker: self,
-            shown_index: track_index.clone(),
+            shown_index: track_index,
             track_index,
             dirty,
             inner: RelationInner::new(inner, count_send),
@@ -68,9 +68,25 @@ impl ContextTracker {
     pub fn dump_dot(
         &self,
         file: impl Write,
-        extra_edges: &Vec<(TrackIndex, TrackIndex)>,
+        extra_edges: &[(TrackIndex, TrackIndex)],
     ) -> Result<(), io::Error> {
         self.0.read().unwrap().dump_dot(file, extra_edges)
+    }
+
+    pub(crate) fn set_name(&mut self, index: TrackIndex, name: String) {
+        self.0.write().unwrap().set_name(index, name)
+    }
+
+    pub(crate) fn set_type_name(&mut self, index: TrackIndex, type_name: String) {
+        self.0.write().unwrap().set_type_name(index, type_name)
+    }
+
+    pub(crate) fn set_hidden(&mut self, index: TrackIndex) {
+        self.0.write().unwrap().set_hidden(index)
+    }
+
+    pub(crate) fn find_shown_index(&self, index: TrackIndex) -> TrackIndex {
+        self.0.read().unwrap().find_shown_index(index)
     }
 }
 impl Debug for ContextTracker {
@@ -80,7 +96,7 @@ impl Debug for ContextTracker {
 }
 
 impl ContextTrackerInner {
-    fn find_shown_index<'a>(&'a self, mut ind: &'a TrackIndex) -> &'a TrackIndex {
+    fn find_shown_index(&self, mut ind: TrackIndex) -> TrackIndex {
         loop {
             let t = &self.0[ind.0];
             if t.hidden {
@@ -89,7 +105,7 @@ impl ContextTrackerInner {
                     1,
                     "unreachable; hidden node with non-one deps"
                 );
-                ind = &t.deps[0];
+                ind = t.deps[0];
             } else {
                 return ind;
             }
@@ -98,7 +114,7 @@ impl ContextTrackerInner {
     fn dump_dot(
         &self,
         mut file: impl Write,
-        extra_edges: &Vec<(TrackIndex, TrackIndex)>,
+        extra_edges: &[(TrackIndex, TrackIndex)],
     ) -> Result<(), io::Error> {
         writeln!(file, "digraph flow {{")?;
         for (i, info) in self.0.iter().enumerate() {
@@ -114,11 +130,11 @@ impl ContextTrackerInner {
                 info.type_name,
                 info.count.get()
             )?;
-            for dep in info.deps.iter() {
+            for &dep in info.deps.iter() {
                 writeln!(file, "  node{} -> node{};", self.find_shown_index(dep), i)?;
             }
         }
-        for (i, j) in extra_edges {
+        for &(i, j) in extra_edges {
             writeln!(
                 file,
                 "  node{} -> node{} [style=dotted];",
@@ -128,30 +144,19 @@ impl ContextTrackerInner {
         }
         writeln!(file, "}}")
     }
-}
-
-impl<C: Op_> Relation<C> {
-    pub fn named(self, name: &str) -> Self {
-        self.context_tracker.0.write().unwrap().0[self.shown_index.0].name = name.to_string();
-        self
+    pub fn set_name(&mut self, index: TrackIndex, name: String) {
+        self.0[index.0].name = name
     }
-    pub fn type_named(self, type_name: &str) -> Self {
-        self.context_tracker.0.write().unwrap().0[self.shown_index.0].type_name =
-            type_name.to_string();
-        self
+    pub fn set_type_name(&mut self, index: TrackIndex, type_name: String) {
+        self.0[index.0].type_name = type_name
     }
-    pub fn hidden(mut self) -> Self {
-        {
-            let mut borrowed = self.context_tracker.0.write().unwrap();
-            let mut info = &mut borrowed.0[self.shown_index.0];
-            assert_eq!(
-                info.deps.len(),
-                1,
-                "Can only hide nodes with exactly one dependency"
-            );
-            info.hidden = true;
-            self.shown_index = borrowed.find_shown_index(&self.shown_index).clone();
-        }
-        self
+    pub fn set_hidden(&mut self, index: TrackIndex) {
+        let mut info = &mut self.0[index.0];
+        assert_eq!(
+            info.deps.len(),
+            1,
+            "Can only hide nodes with exactly one dependency"
+        );
+        info.hidden = true;
     }
 }

@@ -1,14 +1,16 @@
-use super::Context;
-use std::mem;
+use std::{
+    cell::{RefCell, RefMut},
+    mem,
+};
 
 pub type HandlerPosition = usize;
 
 pub trait IsInputHandler {
-    fn dump(&self);
+    fn dump(&mut self);
 }
 
 struct Handler<'a> {
-    dumper: Box<dyn 'a + IsInputHandler>,
+    dumper: RefCell<Box<dyn 'a + IsInputHandler>>,
     is_queued: bool,
 }
 
@@ -19,34 +21,30 @@ pub struct HandlerQueue<'a> {
 }
 
 impl<'a> HandlerQueue<'a> {
-    fn add_handler(&mut self, handler: impl IsInputHandler + 'a) -> HandlerPosition {
+    pub fn add_handler(&mut self, handler: impl IsInputHandler + 'a) -> HandlerPosition {
         let pos = self.handlers.len();
         self.handlers.push(Handler {
-            dumper: Box::new(handler),
+            dumper: RefCell::new(Box::new(handler)),
             is_queued: false,
         });
         pos
     }
     pub fn enqueue(&mut self, i: HandlerPosition) {
-        let is_queued = &mut self.handlers[i].is_queued;
-        if !*is_queued {
-            *is_queued = true;
+        let handler = &mut self.handlers[i];
+        if !handler.is_queued {
+            handler.is_queued = true;
             self.queued_handler_inds.push(i);
         }
     }
-    pub fn take_queued<'b>(&'b mut self) -> impl Iterator<Item = &'b Box<dyn 'a + IsInputHandler>> {
-        for &i in &self.queued_handler_inds {
+    pub fn take_queued(
+        &mut self,
+    ) -> impl Iterator<Item = RefMut<'_, Box<dyn 'a + IsInputHandler>>> {
+        for &i in self.queued_handler_inds.iter() {
             self.handlers[i].is_queued = false;
         }
         let handlers = &self.handlers;
         mem::take(&mut self.queued_handler_inds)
             .into_iter()
-            .map(move |i| &handlers[i].dumper)
-    }
-}
-
-impl<'a> Context<'a> {
-    pub(super) fn add_handler(&self, handler: impl IsInputHandler + 'a) -> HandlerPosition {
-        self.handler_queue.borrow_mut().add_handler(handler)
+            .map(move |i| handlers[i].dumper.borrow_mut())
     }
 }

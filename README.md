@@ -19,8 +19,8 @@ let mut context = CreationContext::new();
 And some inputs:
 
 ```rust
-let (input1, relation1) = context.new_input::<(char, usize)>();
-let (input2, relation2) = context.new_input::<(char, String)>();
+let (mut input1, relation1) = context.new_input::<(char, usize)>();
+let (mut input2, relation2) = context.new_input::<(char, String)>();
 ```
 
 Set up your relational operations:

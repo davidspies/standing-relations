@@ -29,17 +29,17 @@ pub struct Saved<C: Op_> {
 
 impl<C: Op_> Clone for Saved<C> {
     fn clone(&self) -> Self {
-        Saved {
+        Self {
             context_tracker: self.context_tracker.clone(),
             inner: Rc::clone(&self.inner),
-            track_index: self.track_index.clone(),
+            track_index: self.track_index,
         }
     }
 }
 
 impl<C: Op_> Saved<C> {
     pub fn new(rel: Relation<C>) -> Self {
-        Saved {
+        Self {
             context_tracker: rel.context_tracker,
             inner: Rc::new(RefCell::new(SaveInner {
                 inner: rel.inner,
@@ -55,9 +55,9 @@ impl<C: Op_> Saved<C> {
     {
         let (sender, receiver) = pipes::new();
         let dirty = {
-            let mut borrowed = self.inner.borrow_mut();
-            borrowed.senders.push(sender);
-            borrowed.dirty.add_target()
+            let mut inner = self.inner.borrow_mut();
+            inner.senders.push(sender);
+            inner.dirty.add_target()
         };
         self.context_tracker.clone().add_relation(
             dirty,
@@ -65,16 +65,16 @@ impl<C: Op_> Saved<C> {
                 inner: self.clone(),
                 receiver,
             },
-            vec![self.track_index.clone()],
+            vec![self.track_index],
         )
     }
     pub(super) fn borrow(&self) -> Ref<RelationInner<C>> {
         Ref::map(self.inner.borrow(), |x| &x.inner)
     }
-    pub(super) fn propagate(&self) {
-        if self.inner.borrow().dirty.take_status() {
+    pub(super) fn propagate(&mut self) {
+        if self.inner.borrow_mut().dirty.take_status() {
             let data = Rc::new(self.inner.borrow_mut().inner.get_vec());
-            for sender in &self.inner.borrow().senders {
+            for sender in self.inner.borrow_mut().senders.iter_mut() {
                 sender.send(Rc::clone(&data))
             }
         }
@@ -90,7 +90,7 @@ where
     fn foreach<'a>(&'a mut self, mut continuation: impl FnMut(Self::T) + 'a) {
         self.inner.propagate();
         for data in self.receiver.receive() {
-            for x in &*data {
+            for x in data.iter() {
                 continuation(x.clone())
             }
         }

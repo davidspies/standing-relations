@@ -13,6 +13,7 @@ impl<K: Clone + Eq + Hash, V: Clone + Eq + Hash, C: Op<D = (K, V)>> Relation<C> 
     ) -> Relation<impl Op<D = (V, V2)>> {
         self.join(other).map_h(|(_, v1, v2)| (v1, v2))
     }
+    // TODO Make this native rather than a convenience function
     pub fn left_join<V2: Clone + Eq + Hash>(
         self,
         other: Relation<impl Op<D = (K, V2)>>,
@@ -22,7 +23,7 @@ impl<K: Clone + Eq + Hash, V: Clone + Eq + Hash, C: Op<D = (K, V)>> Relation<C> 
         self_saved
             .get()
             .join(other_saved.get())
-            .map(|(k, l, r)| (k, l, Some(r)))
+            .map_h(|(k, l, r)| (k, l, Some(r)))
             .concat(
                 self_saved
                     .get()

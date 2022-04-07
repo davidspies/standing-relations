@@ -1,5 +1,7 @@
 use crate::{pair::Pair, Op, Op_, Relation};
-use std::{fmt::Debug, iter, ops::Neg};
+use std::{collections::HashMap, convert::identity, fmt::Debug, iter, ops::Neg};
+
+pub type KVMap<K, V> = HashMap<K, HashMap<V, isize>>;
 
 impl<C: Op_> Relation<C> {
     pub fn map_<Y, F: Fn(C::T) -> Y>(self, f: F) -> Relation<impl Op_<T = Y>> {
@@ -24,7 +26,12 @@ impl<C: Op> Relation<C> {
     ) -> Relation<impl Op<D = I::Item>> {
         self.flat_map_(move |(x, count)| f(x).into_iter().map(move |y| (y, count)))
     }
-
+    pub fn flatten(self) -> Relation<impl Op<D = <C::D as IntoIterator>::Item>>
+    where
+        C::D: IntoIterator,
+    {
+        self.flat_map(identity).type_named("flatten")
+    }
     pub fn map<Y>(self, f: impl Fn(C::D) -> Y) -> Relation<impl Op<D = Y>> {
         self.flat_map(move |x| iter::once(f(x))).type_named("map")
     }

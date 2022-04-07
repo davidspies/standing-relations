@@ -4,10 +4,10 @@ use crate::{CreationContext, Output};
 
 #[test]
 fn readme() {
-    let context = CreationContext::new();
+    let mut context = CreationContext::new();
 
-    let (input1, relation1) = context.new_input::<(char, usize)>();
-    let (input2, relation2) = context.new_input::<(char, String)>();
+    let (mut input1, relation1) = context.new_input::<(char, usize)>();
+    let (mut input2, relation2) = context.new_input::<(char, String)>();
 
     let foo = relation2.save();
     let bar = relation1.join(foo.get());

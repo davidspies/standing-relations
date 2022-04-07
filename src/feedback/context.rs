@@ -8,7 +8,7 @@ use crate::{
 };
 use std::{
     io::{self, Write},
-    ops::Deref,
+    ops::{Deref, DerefMut},
     sync::{Arc, RwLock},
 };
 
@@ -66,9 +66,9 @@ impl<'a, I> ExecutionContext<'a, I> {
             }
         }
     }
-    pub fn get_tracker(&self) -> ContextTracker {
+    pub fn tracker(&self) -> ContextTracker {
         ContextTracker {
-            inner: self.inner.get_tracker().clone(),
+            inner: self.inner.tracker().clone(),
             extra_edges: self.extra_edges.clone(),
         }
     }
@@ -91,17 +91,17 @@ impl<'a, I> CreationContext<'a, I> {
         mut feeder: impl IsFeedback<'a, I> + 'a,
         extra_edge: Option<(TrackIndex, TrackIndex)>,
     ) {
-        let cloned = self.dirty_send.clone();
+        let mut dirty_send = self.dirty_send.clone();
         let i = self.feeders.len();
-        feeder.add_listener(self, move || cloned.send(i));
+        feeder.add_listener(self, move || dirty_send.send(i));
         self.feeders.push(Box::new(feeder));
         if let Some(edge) = extra_edge {
             self.extra_edges.write().unwrap().push(edge);
         }
     }
-    pub fn get_tracker(&self) -> ContextTracker {
+    pub fn tracker(&self) -> ContextTracker {
         ContextTracker {
-            inner: self.inner.get_tracker().clone(),
+            inner: self.inner.tracker().clone(),
             extra_edges: self.extra_edges.clone(),
         }
     }
@@ -110,15 +110,27 @@ impl<'a, I> CreationContext<'a, I> {
 impl<'a, I> Deref for CreationContext<'a, I> {
     type Target = core::CreationContext<'a>;
 
-    fn deref(&self) -> &core::CreationContext<'a> {
+    fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+impl<'a, I> DerefMut for CreationContext<'a, I> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
     }
 }
 
 impl<'a, I> Deref for ExecutionContext<'a, I> {
     type Target = core::ExecutionContext<'a>;
 
-    fn deref(&self) -> &core::ExecutionContext<'a> {
+    fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+impl<'a, I> DerefMut for ExecutionContext<'a, I> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.inner
     }
 }

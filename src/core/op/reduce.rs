@@ -6,7 +6,7 @@ use crate::core::{
     Observable, Op, Op_, Relation, Save,
 };
 use std::{
-    cell::Ref,
+    cell::{Ref, RefCell},
     collections::{HashMap, HashSet},
     hash::Hash,
 };
@@ -98,12 +98,6 @@ impl<C: Op<D = (K, X)>, K: Clone + Eq + Hash, X> Relation<C> {
             vec![self.track_index],
         )
     }
-    pub fn reduce_<M: CountMap<X> + Observable, Y: Clone + Eq, F: Fn(&K, &M) -> Y>(
-        self,
-        f: F,
-    ) -> Relation<Reduce<K, X, C, M, Y, HashMap<K, Y>, F>> {
-        self.reduce_with_output_(f)
-    }
 }
 
 pub trait IsReduce: Op_ {
@@ -131,21 +125,17 @@ impl<
 
 impl<C: IsReduce> Relation<C> {
     pub fn probe(self, context: &CreationContext) -> ReduceProbe<C> {
-        assert_eq!(
-            &self.context_tracker,
-            context.get_tracker(),
-            "Context mismatch"
-        );
+        assert_eq!(&self.context_tracker, context.tracker(), "Context mismatch");
         ReduceProbe {
             context_tracker: self.context_tracker.clone(),
-            inner: Saved::new(self),
+            inner: RefCell::new(Saved::new(self)),
         }
     }
 }
 
 pub struct ReduceProbe<C: IsReduce> {
     context_tracker: ContextTracker,
-    inner: Saved<C>,
+    inner: RefCell<Saved<C>>,
 }
 
 impl<C: IsReduce> ReduceProbe<C> {
@@ -153,16 +143,20 @@ impl<C: IsReduce> ReduceProbe<C> {
     where
         C::T: Clone,
     {
-        self.inner.clone().get()
+        self.inner.borrow().clone().get()
     }
-    pub fn get<'a>(&'a self, context: &'a ExecutionContext<'_>) -> Ref<'a, C::OM> {
-        assert_eq!(
-            &self.context_tracker,
-            context.get_tracker(),
-            "Context mismatch"
-        );
-        self.inner.propagate();
-        Ref::map(self.inner.borrow(), |x| x.inner.get_map())
+    pub fn inspect<'a>(&'a self, context: &'a ExecutionContext<'_>) -> ProbeRef<'a, C> {
+        assert_eq!(&self.context_tracker, context.tracker(), "Context mismatch");
+        self.inner.borrow_mut().propagate();
+        ProbeRef(self.inner.borrow())
+    }
+}
+
+pub struct ProbeRef<'a, C: IsReduce>(Ref<'a, Saved<C>>);
+
+impl<'a, C: IsReduce> ProbeRef<'a, C> {
+    pub fn get(&self) -> Ref<'_, C::OM> {
+        Ref::map(self.0.borrow(), |x| x.inner.get_map())
     }
 }
 

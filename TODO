@@ -1,0 +1,1 @@
+* Left-joins should be implemented more efficiently as a native function rather than a convenience function built out of join and anti-join

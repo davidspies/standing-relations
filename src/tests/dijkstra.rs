@@ -8,10 +8,10 @@ fn dijkstra<'a, Node: Eq + Hash + Clone + 'a>(
 ) -> Option<u64> {
     let mut context = CreationContext::new_();
     // A relation containing a single element: the start node
-    let (start_inp, start_relation) = context.new_input::<Node>();
+    let (mut start_inp, start_relation) = context.new_input::<Node>();
     // A relation containing a single element: the end node
-    let (end_inp, end_relation) = context.new_input::<Node>();
-    let (edge_inp, edge_relation) = context.new_input::<(Node, Node, u64)>();
+    let (mut end_inp, end_relation) = context.new_input::<Node>();
+    let (mut edge_inp, edge_relation) = context.new_input::<(Node, Node, u64)>();
 
     let (dists_input, dists) = context.new_input::<(Node, u64)>();
     let dists = dists.save();
@@ -32,7 +32,7 @@ fn dijkstra<'a, Node: Eq + Hash + Clone + 'a>(
         dists
             .get()
             .join(edge_relation.map(|(from, to, dist)| (from, (to, dist))))
-            .map(|(_, dfrom, (to, dist))| (to, dfrom + dist))
+            .map(|(_, dfrom, (to, dist))| (to, dist + dfrom))
             .group_min()
             .map(|(x, dist)| (dist, (x, dist))),
         dists_input,

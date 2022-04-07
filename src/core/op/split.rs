@@ -1,31 +1,28 @@
 use crate::core::{
     dirty::DirtyReceive,
-    flat_iter::IntoFlatIterator,
     pipes::{self, Receiver, Sender},
     relation::RelationInner,
     Op_, Relation,
 };
 use std::{cell::RefCell, rc::Rc};
 
-pub struct Split<TI: IntoIterator, C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> {
-    inner: Rc<RefCell<SplitInner<C, LI, RI>>>,
-    receiver: Receiver<TI>,
+pub struct Split<T, C: Op_<T = (L, R)>, L, R> {
+    inner: Rc<RefCell<SplitInner<C, L, R>>>,
+    receiver: Receiver<T>,
 }
 
-struct SplitInner<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> {
+struct SplitInner<C: Op_<T = (L, R)>, L, R> {
     inner: RelationInner<C>,
-    left_sender: Sender<LI>,
-    right_sender: Sender<RI>,
+    left_sender: Sender<L>,
+    right_sender: Sender<R>,
     dirty: DirtyReceive,
 }
 
-impl<TI: IntoIterator, C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Op_
-    for Split<TI, C, LI, RI>
-{
-    type T = TI::Item;
+impl<T, C: Op_<T = (L, R)>, L, R> Op_ for Split<T, C, L, R> {
+    type T = T;
 
     fn foreach<'a>(&'a mut self, mut continuation: impl FnMut(Self::T) + 'a) {
-        if self.inner.borrow().dirty.take_status() {
+        if self.inner.borrow_mut().dirty.take_status() {
             let mut inner = self.inner.borrow_mut();
             let data = inner.inner.get_vec();
             for (xl, xr) in data {
@@ -33,7 +30,7 @@ impl<TI: IntoIterator, C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator>
                 inner.right_sender.send(xr)
             }
         }
-        for x in self.receiver.receive().into_flat_iter() {
+        for x in self.receiver.receive() {
             continuation(x)
         }
     }
@@ -43,13 +40,9 @@ impl<TI: IntoIterator, C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator>
     }
 }
 
-impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
-    pub fn split_(
-        self,
-    ) -> (
-        Relation<Split<LI, C, LI, RI>>,
-        Relation<Split<RI, C, LI, RI>>,
-    ) {
+#[allow(clippy::type_complexity)]
+impl<C: Op_<T = (L, R)>, L, R> Relation<C> {
+    pub fn split_(self) -> (Relation<Split<L, C, L, R>>, Relation<Split<R, C, L, R>>) {
         let mut this_dirty = self.dirty.into_receive();
         let left_dirty = this_dirty.add_target();
         let right_dirty = this_dirty.add_target();
@@ -67,7 +60,7 @@ impl<C: Op_<T = (LI, RI)>, LI: IntoIterator, RI: IntoIterator> Relation<C> {
                 inner: Rc::clone(&inner),
                 receiver: left_receiver,
             },
-            vec![self.track_index.clone()],
+            vec![self.track_index],
         );
         let right_result = self.context_tracker.add_relation(
             right_dirty,

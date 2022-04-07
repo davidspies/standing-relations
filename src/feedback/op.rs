@@ -6,7 +6,7 @@ use super::context::CreationContext;
 use crate::{core, CountMap, Input, Observable, Op, Output, Relation};
 use std::hash::Hash;
 
-pub struct Feedback<'a, C: Op>
+pub struct FeedbackWhile<'a, C: Op>
 where
     C::D: Eq + Hash,
 {
@@ -14,7 +14,8 @@ where
     input: Input<'a, C::D>,
 }
 
-pub struct FeedbackOnce<'a, C: Op> {
+pub struct Feedback<'a, C: Op> {
+    #[allow(clippy::type_complexity)]
     output: Output<C::D, C, Pipe<(C::D, isize)>>,
     input: Input<'a, C::D>,
 }
@@ -43,7 +44,7 @@ pub enum Instruct<I> {
     Interrupt(I),
 }
 
-impl<'a, C: Op, I> IsFeeder<'a, I> for Feedback<'a, C>
+impl<'a, C: Op, I> IsFeeder<'a, I> for FeedbackWhile<'a, C>
 where
     C::D: Clone + Eq + Hash + 'a,
 {
@@ -59,7 +60,7 @@ where
     }
 }
 
-impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C>
+impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackWhile<'a, C>
 where
     C::D: Clone + Eq + Hash + 'a,
 {
@@ -68,7 +69,7 @@ where
     }
 }
 
-impl<'a, C: Op, I> IsFeeder<'a, I> for FeedbackOnce<'a, C> {
+impl<'a, C: Op, I> IsFeeder<'a, I> for Feedback<'a, C> {
     fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
         let m = self.output.get(context);
         let changes = m.receive();
@@ -81,7 +82,7 @@ impl<'a, C: Op, I> IsFeeder<'a, I> for FeedbackOnce<'a, C> {
     }
 }
 
-impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackOnce<'a, C> {
+impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C> {
     fn add_listener(&mut self, context: &core::CreationContext, f: impl FnMut() + 'static) {
         self.output.add_listener(context, f);
     }
@@ -135,12 +136,9 @@ impl<'a, I> CreationContext<'a, I> {
     /// any changes to the collection represented by the `Relation` argument are fed back into the
     /// `Input` argument. This repeats until the collection stops changing.
     pub fn feed<D>(&mut self, rel: Relation<impl Op<D = D> + 'a>, input: Input<'a, D>) {
-        let edge = (
-            rel.get_track_index().clone(),
-            input.get_track_index().clone(),
-        );
+        let edge = (rel.get_track_index(), input.get_track_index());
         self.add_feeder(
-            FeedbackOnce {
+            Feedback {
                 output: rel.get_output_(self),
                 input,
             },
@@ -152,16 +150,13 @@ impl<'a, I> CreationContext<'a, I> {
     /// additionally has an ordering key. Rather than feeding _all_ changes back into the `Input`, only
     /// those with the minimum present ordering key are fed back in. If any later changes are cancelled
     /// out as a result of this (if their count goes to zero), then they will not be fed in at all.
-    /// This can be handy in situations where using `feed` can cause an infinite loop.
+    /// This can be handy in situations where using `feed` naively can cause an infinite loop.
     pub fn feed_ordered<K: Ord + 'a, V: Eq + Hash + 'a>(
         &mut self,
         rel: Relation<impl Op<D = (K, V)> + 'a>,
         input: Input<'a, V>,
     ) {
-        let edge = (
-            rel.get_track_index().clone(),
-            input.get_track_index().clone(),
-        );
+        let edge = (rel.get_track_index(), input.get_track_index());
         self.add_feeder(
             FeedbackOrdered {
                 output: rel.get_output_(self),
@@ -190,10 +185,7 @@ impl<'a, I> CreationContext<'a, I> {
         output: Output<D, impl Op<D = D> + 'a>,
         input: Input<'a, D>,
     ) {
-        let edge = (
-            output.get_track_index().clone(),
-            input.get_track_index().clone(),
-        );
-        self.add_feeder(Feedback { output, input }, Some(edge))
+        let edge = (output.get_track_index(), input.get_track_index());
+        self.add_feeder(FeedbackWhile { output, input }, Some(edge))
     }
 }

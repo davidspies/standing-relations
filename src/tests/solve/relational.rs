@@ -11,7 +11,6 @@ use crate::{
 use std::{
     collections::HashMap,
     io::Write,
-    iter,
     sync::{Arc, Barrier},
     thread,
 };
@@ -24,22 +23,25 @@ pub fn solve<Game: IsGame>(
 
     let mut context = CreationContext::new();
 
-    let (position_inp, positions_dupped) = context.new_input();
+    let (mut position_inp, positions_dupped) = context.new_input();
     let positions_dupped = positions_dupped.named("positions_dupped");
     let positions = positions_dupped.distinct().named("positions");
     let (pos_children, starting_values) = positions
         .map(|p: Game::Position| {
-            let (it, p_clone, outcome) = match p.status() {
-                Either::Left(moves) => (moves, Some(p.clone()), IsOutcome::draw()),
-                Either::Right(outcome) => (Default::default(), None, outcome),
+            let (moves, outcome) = match p.status() {
+                Either::Left(moves) => (moves, IsOutcome::draw()),
+                Either::Right(outcome) => (Default::default(), outcome),
             };
             (
-                it.into_iter().map(move |x| (p_clone.clone().unwrap(), x)),
-                iter::once((p, outcome)),
+                moves.into_iter().map({
+                    let p = p.clone();
+                    move |x| (p.clone(), x)
+                }),
+                (p, outcome),
             )
         })
         .split();
-    let pos_children = pos_children.named("pos_children").collect();
+    let pos_children = pos_children.flatten().named("pos_children").collect();
     let starting_values = starting_values.named("starting_values");
 
     context.feed(pos_children.get().snds(), position_inp.clone());
@@ -77,7 +79,7 @@ pub fn solve<Game: IsGame>(
     let mut context = context.begin();
 
     //Testing that ContextTracker can be sent between threads
-    let context_tracker = context.get_tracker();
+    let context_tracker = context.tracker();
     let barrier = Arc::new(Barrier::new(2));
     let barrier_clone = Arc::clone(&barrier);
     thread::spawn(move || {
@@ -89,7 +91,7 @@ pub fn solve<Game: IsGame>(
 
     context.commit();
 
-    let result = output_probe.get(&context).clone();
+    let result = output_probe.inspect(&context).get().clone();
 
     barrier.wait();
 
