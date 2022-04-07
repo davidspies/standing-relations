@@ -90,7 +90,7 @@ fn set_dirty_inner(this: &Rc<RefCell<Node>>) {
 }
 
 impl DirtySend {
-    pub fn set_dirty(&self) {
+    pub fn set_dirty(&mut self) {
         if let Some(inner) = self.0.borrow().0.as_ref() {
             set_dirty_inner(inner);
         }
