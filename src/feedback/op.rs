@@ -56,8 +56,10 @@ where
         if m.is_empty() {
             Instruct::Unchanged
         } else {
-            self.input
-                .send_all(context, m.iter().map(|(x, &count)| (x.clone(), count)));
+            self.input.send_all(
+                context,
+                m.iter().map(|(x, &count)| (x.clone(), count)).collect(),
+            );
             Instruct::Changed
         }
     }
@@ -99,7 +101,7 @@ impl<'a, K: Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeeder<'a, I>
         match m.receive() {
             None => Instruct::Unchanged,
             Some((_, changes)) => {
-                self.input.send_all(context, changes);
+                self.input.send_all(context, changes.into_iter().collect());
                 Instruct::Changed
             }
         }

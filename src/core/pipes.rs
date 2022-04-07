@@ -22,7 +22,7 @@ impl<T> Sender<T> {
     pub fn send(&mut self, data: T) {
         self.0.borrow_mut().push(data)
     }
-    pub fn send_all(&mut self, data: impl IntoIterator<Item = T>) {
+    pub fn send_all(&mut self, data: Vec<T>) {
         self.0.borrow_mut().extend(data)
     }
 }

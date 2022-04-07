@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, slice};
 
 use crate::core::{
     dirty::{self, DirtySend},
@@ -29,6 +29,7 @@ pub struct Input_<'a, T> {
     sender: pipes::Sender<T>,
     handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
     self_index: HandlerPosition,
+    listeners: Rc<RefCell<Vec<Box<dyn FnMut(&[T])>>>>,
 }
 
 impl<T> Clone for Input_<'_, T> {
@@ -39,6 +40,7 @@ impl<T> Clone for Input_<'_, T> {
             sender: self.sender.clone(),
             handler_queue: Rc::clone(&self.handler_queue),
             self_index: self.self_index,
+            listeners: Rc::clone(&self.listeners),
         }
     }
 }
@@ -47,11 +49,17 @@ impl<T> Input_<'_, T> {
     pub fn send(&mut self, context: &ExecutionContext, x: T) {
         assert_eq!(self.context_tracker, context.0.tracker, "Context mismatch");
         self.handler_queue.borrow_mut().enqueue(self.self_index);
-        self.sender.send(x)
+        for listener in self.listeners.borrow_mut().iter_mut() {
+            listener(slice::from_ref(&x))
+        }
+        self.sender.send(x);
     }
-    pub fn send_all(&mut self, context: &ExecutionContext, data: impl IntoIterator<Item = T>) {
+    pub fn send_all(&mut self, context: &ExecutionContext, data: Vec<T>) {
         assert_eq!(self.context_tracker, context.0.tracker, "Context mismatch");
         self.handler_queue.borrow_mut().enqueue(self.self_index);
+        for listener in self.listeners.borrow_mut().iter_mut() {
+            listener(&data)
+        }
         self.sender.send_all(data);
     }
     pub fn tracking_index(&self) -> TrackingIndex {
@@ -96,6 +104,7 @@ impl<'a> CreationContext<'a> {
             sender: sender1,
             handler_queue: Rc::clone(self.0.handler_queue()),
             self_index: i,
+            listeners: Default::default(),
         };
         (input_sender, relation)
     }
