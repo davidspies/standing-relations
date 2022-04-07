@@ -4,10 +4,13 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use crate::core::{
-    self,
-    pipes::{self, Receiver, Sender},
-    TrackingIndex,
+use crate::{
+    core::{
+        self,
+        pipes::{self, Receiver, Sender},
+        InputOp, Input_, Relation, TrackingIndex,
+    },
+    Input, InputRelation,
 };
 
 use self::pq_receiver::PQReceiver;
@@ -81,6 +84,9 @@ impl<'a, I> ExecutionContext<'a, I> {
 impl<'a, I> CreationContext<'a, I> {
     pub fn new_() -> Self {
         Default::default()
+    }
+    pub fn new_trackable_input<D: 'a>(&mut self) -> (Input<'a, D>, InputRelation<D>) {
+        self.inner.new_input()
     }
     pub fn begin(self) -> ExecutionContext<'a, I> {
         ExecutionContext {
