@@ -29,7 +29,7 @@ pub struct Input_<'a, T> {
     sender: pipes::Sender<T>,
     handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
     self_index: HandlerPosition,
-    listeners: Rc<RefCell<Vec<Box<dyn FnMut(&[T])>>>>,
+    listeners: Rc<RefCell<Vec<Box<dyn FnMut(&[T]) + 'a>>>>,
 }
 
 impl<T> Clone for Input_<'_, T> {
@@ -45,7 +45,11 @@ impl<T> Clone for Input_<'_, T> {
     }
 }
 
-impl<T> Input_<'_, T> {
+impl<'a, T> Input_<'a, T> {
+    pub(crate) fn add_listener(&mut self, context: &CreationContext, listener: impl FnMut(&[T]) + 'a) {
+        assert_eq!(self.context_tracker, context.0.tracker, "Context mismatch");
+        self.listeners.borrow_mut().push(Box::new(listener));
+    }
     pub fn send(&mut self, context: &ExecutionContext, x: T) {
         assert_eq!(self.context_tracker, context.0.tracker, "Context mismatch");
         self.handler_queue.borrow_mut().enqueue(self.self_index);
@@ -60,6 +64,11 @@ impl<T> Input_<'_, T> {
         for listener in self.listeners.borrow_mut().iter_mut() {
             listener(&data)
         }
+        self.sender.send_all(data);
+    }
+    pub(crate) fn silent_send_all(&mut self, context: &ExecutionContext, data: Vec<T>) {
+        assert_eq!(self.context_tracker, context.0.tracker, "Context mismatch");
+        self.handler_queue.borrow_mut().enqueue(self.self_index);
         self.sender.send_all(data);
     }
     pub fn tracking_index(&self) -> TrackingIndex {
