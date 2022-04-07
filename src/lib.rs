@@ -1,9 +1,5 @@
 #![feature(map_first_last, type_alias_impl_trait, box_into_inner, cell_update)]
 
-mod convenience;
-pub mod core;
-mod feedback;
-
 pub use self::{
     convenience::{
         input::{Input, InputRelation},
@@ -15,6 +11,11 @@ pub use self::{
     },
     feedback::{ContextTracker, CreationContext, ExecutionContext},
 };
+
+mod convenience;
+mod feedback;
+
+pub mod core;
 
 #[cfg(test)]
 mod tests;

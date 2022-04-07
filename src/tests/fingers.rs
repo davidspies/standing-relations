@@ -1,5 +1,6 @@
-use goldenfile::Mint;
 use std::io::Write;
+
+use goldenfile::Mint;
 
 use super::{
     game::{Either, IsGame, IsPosition},

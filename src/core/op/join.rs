@@ -1,7 +1,8 @@
+use std::{collections::HashMap, hash::Hash};
+
 use crate::core::{
     mborrowed::OrOwnedDefault, relation::RelationInner, CountMap, Op, Op_, Relation,
 };
-use std::{collections::HashMap, hash::Hash};
 
 pub struct Join<K, V1, V2, C1: Op<D = (K, V1)>, C2: Op<D = (K, V2)>> {
     left: RelationInner<C1>,
@@ -110,7 +111,7 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<
                 right: other.inner,
                 right_map: HashMap::new(),
             },
-            vec![self.track_index, other.track_index],
+            vec![self.tracking_index, other.tracking_index],
         )
     }
 
@@ -128,7 +129,7 @@ impl<K: Clone + Eq + Hash, V1: Clone + Eq + Hash, C1: Op<D = (K, V1)>> Relation<
                 right: other.inner,
                 right_map: HashMap::new(),
             },
-            vec![self.track_index, other.track_index],
+            vec![self.tracking_index, other.tracking_index],
         )
     }
 }

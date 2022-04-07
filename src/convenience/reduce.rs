@@ -1,8 +1,9 @@
-use crate::{core::Reduce, CountMap, IsReduce, Observable, Op, Relation};
 use std::{
     collections::{BTreeMap, HashMap},
     hash::Hash,
 };
+
+use crate::{core::Reduce, CountMap, IsReduce, Observable, Op, Relation};
 
 impl<C: Op> Relation<C>
 where

@@ -15,7 +15,7 @@ fn readme() {
         .get()
         .map(|(_, s)| (s.as_str().chars().next().unwrap_or('x'), s.len()));
     let qux = bar.map(|(c, n, s)| (c, n + s.len())).concat(baz).distinct();
-    let arrangement: Output<(char, usize), _> = qux.get_output(&context);
+    let arrangement: Output<(char, usize), _> = qux.into_output(&context);
 
     let mut context = context.begin();
 

@@ -1,16 +1,14 @@
-use crate::{
-    core::{
-        context::{ContextTracker, TrackIndex},
-        dirty::ReceiveBuilder,
-        Op_,
-    },
+use crate::core::{
+    context::{ContextTracker, TrackingIndex},
+    dirty::ReceiveBuilder,
     pipes::CountSender,
+    Op_,
 };
 
 pub struct Relation<C: Op_> {
     pub(super) context_tracker: ContextTracker,
-    pub(super) track_index: TrackIndex,
-    pub(super) shown_index: TrackIndex,
+    pub(super) tracking_index: TrackingIndex,
+    pub(super) shown_index: TrackingIndex,
     pub(super) dirty: ReceiveBuilder,
     pub(super) inner: RelationInner<C>,
 }
@@ -48,8 +46,8 @@ pub(super) fn with_counter<'a, T>(
 }
 
 impl<C: Op_> Relation<C> {
-    pub fn get_track_index(&self) -> TrackIndex {
-        self.track_index
+    pub fn tracking_index(&self) -> TrackingIndex {
+        self.tracking_index
     }
     pub fn named(mut self, name: &str) -> Self {
         self.context_tracker

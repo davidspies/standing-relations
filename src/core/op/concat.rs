@@ -23,7 +23,7 @@ impl<C1: Op_> Relation<C1> {
         self.context_tracker.add_relation(
             self.dirty.or(other.dirty),
             Concat(self.inner, other.inner),
-            vec![self.track_index, other.track_index],
+            vec![self.tracking_index, other.tracking_index],
         )
     }
 }

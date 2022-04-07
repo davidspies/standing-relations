@@ -12,8 +12,8 @@ impl<C: Op<D = (L, R)>, L, R> Relation<C> {
     ///    let mut context = CreationContext::new();
     ///    let (mut foo_input, foo) = context.new_input::<usize>();
     ///    let (evens, odds) = foo.map(|x| (x * 2, x * 2 + 1)).split();
-    ///    let evens = evens.get_output(&context);
-    ///    let odds = odds.get_output(&context);
+    ///    let evens = evens.into_output(&context);
+    ///    let odds = odds.into_output(&context);
     ///    
     ///    let mut context = context.begin();
     ///    foo_input.add_all(&context, 0 .. 2);

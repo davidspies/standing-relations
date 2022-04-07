@@ -1,3 +1,10 @@
+use std::{
+    collections::HashMap,
+    io::Write,
+    sync::{Arc, Barrier},
+    thread,
+};
+
 use goldenfile::Mint;
 
 use crate::{
@@ -7,12 +14,6 @@ use crate::{
         ttt::TTT,
     },
     CreationContext,
-};
-use std::{
-    collections::HashMap,
-    io::Write,
-    sync::{Arc, Barrier},
-    thread,
 };
 
 pub fn solve<Game: IsGame>(

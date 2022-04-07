@@ -1,5 +1,6 @@
-use crate::CreationContext;
 use std::hash::Hash;
+
+use crate::CreationContext;
 
 fn dijkstra<'a, Node: Eq + Hash + Clone + 'a>(
     start: Node,
@@ -19,7 +20,7 @@ fn dijkstra<'a, Node: Eq + Hash + Clone + 'a>(
     context.feed(start_relation.map(|x| (x, 0)), dists_input.clone());
     // Stop as soon as the dists collection contains the end node
     context.interrupt(
-        dists.get().semijoin(end_relation).get_output(&context),
+        dists.get().semijoin(end_relation).into_output(&context),
         |m| m.keys().next().unwrap().1,
     );
     // Discover new connections via a `Relation::join` and feed them back in. Lower distances take

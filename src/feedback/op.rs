@@ -1,10 +1,13 @@
-mod checked_foreach;
-mod pipe;
+use std::hash::Hash;
+
+use crate::{core, CountMap, Input, Observable, Op, Output, Relation};
 
 use self::pipe::{OrderedPipe, Pipe};
+
 use super::context::CreationContext;
-use crate::{core, CountMap, Input, Observable, Op, Output, Relation};
-use std::hash::Hash;
+
+mod checked_foreach;
+mod pipe;
 
 pub struct FeedbackWhile<'a, C: Op>
 where
@@ -136,10 +139,10 @@ impl<'a, I> CreationContext<'a, I> {
     /// any changes to the collection represented by the `Relation` argument are fed back into the
     /// `Input` argument. This repeats until the collection stops changing.
     pub fn feed<D>(&mut self, rel: Relation<impl Op<D = D> + 'a>, input: Input<'a, D>) {
-        let edge = (rel.get_track_index(), input.get_track_index());
+        let edge = (rel.tracking_index(), input.tracking_index());
         self.add_feeder(
             Feedback {
-                output: rel.get_output_(self),
+                output: rel.into_output_(self),
                 input,
             },
             Some(edge),
@@ -156,10 +159,10 @@ impl<'a, I> CreationContext<'a, I> {
         rel: Relation<impl Op<D = (K, V)> + 'a>,
         input: Input<'a, V>,
     ) {
-        let edge = (rel.get_track_index(), input.get_track_index());
+        let edge = (rel.tracking_index(), input.tracking_index());
         self.add_feeder(
             FeedbackOrdered {
-                output: rel.get_output_(self),
+                output: rel.into_output_(self),
                 input,
             },
             Some(edge),
@@ -185,7 +188,7 @@ impl<'a, I> CreationContext<'a, I> {
         output: Output<D, impl Op<D = D> + 'a>,
         input: Input<'a, D>,
     ) {
-        let edge = (output.get_track_index(), input.get_track_index());
+        let edge = (output.tracking_index(), input.tracking_index());
         self.add_feeder(FeedbackWhile { output, input }, Some(edge))
     }
 }

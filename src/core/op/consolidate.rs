@@ -1,5 +1,6 @@
-use crate::core::{relation::RelationInner, CountMap, Op, Op_, Relation};
 use std::{collections::HashMap, hash::Hash};
+
+use crate::core::{relation::RelationInner, CountMap, Op, Op_, Relation};
 
 pub struct Consolidate<C: Op_>(RelationInner<C>);
 
@@ -27,7 +28,7 @@ impl<C: Op_<T = (D, isize)>, D: Eq + Hash> Relation<C> {
         self.context_tracker.add_relation(
             self.dirty,
             Consolidate(self.inner),
-            vec![self.track_index],
+            vec![self.tracking_index],
         )
     }
 }

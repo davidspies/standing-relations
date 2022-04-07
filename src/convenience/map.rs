@@ -1,5 +1,6 @@
-use crate::{pair::Pair, Op, Op_, Relation};
 use std::{collections::HashMap, convert::identity, fmt::Debug, iter, ops::Neg};
+
+use crate::{pair::Pair, Op, Op_, Relation};
 
 pub type KVMap<K, V> = HashMap<K, HashMap<V, isize>>;
 

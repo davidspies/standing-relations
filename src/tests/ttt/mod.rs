@@ -1,9 +1,11 @@
-mod parse;
-mod win;
+use std::fmt::{self, Debug, Formatter};
 
 use super::game::{Either, IsGame, IsPosition};
+
 pub use super::player_outcome::{Outcome, Player};
-use std::fmt::{self, Debug, Formatter};
+
+mod parse;
+mod win;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 enum Piece {

@@ -1,12 +1,14 @@
-use super::{
-    handler_queue::IsInputHandler, ContextTracker, HandlerPosition, HandlerQueue, TrackIndex,
-};
+use std::{cell::RefCell, rc::Rc};
+
 use crate::core::{
     dirty::{self, DirtySend},
     pipes::{self, Receiver},
     CreationContext, ExecutionContext, Op_, Relation,
 };
-use std::{cell::RefCell, rc::Rc};
+
+use super::{
+    handler_queue::IsInputHandler, ContextTracker, HandlerPosition, HandlerQueue, TrackingIndex,
+};
 
 struct InputHandler<T> {
     receiver: pipes::Receiver<T>,
@@ -23,7 +25,7 @@ impl<T> IsInputHandler for InputHandler<T> {
 
 pub struct Input_<'a, T> {
     context_tracker: ContextTracker,
-    track_index: TrackIndex,
+    tracking_index: TrackingIndex,
     sender: pipes::Sender<T>,
     handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
     self_index: HandlerPosition,
@@ -33,7 +35,7 @@ impl<T> Clone for Input_<'_, T> {
     fn clone(&self) -> Self {
         Input_ {
             context_tracker: self.context_tracker.clone(),
-            track_index: self.track_index,
+            tracking_index: self.tracking_index,
             sender: self.sender.clone(),
             handler_queue: Rc::clone(&self.handler_queue),
             self_index: self.self_index,
@@ -52,8 +54,8 @@ impl<T> Input_<'_, T> {
         self.handler_queue.borrow_mut().enqueue(self.self_index);
         self.sender.send_all(data);
     }
-    pub fn get_track_index(&self) -> TrackIndex {
-        self.track_index
+    pub fn tracking_index(&self) -> TrackingIndex {
+        self.tracking_index
     }
 }
 
@@ -90,7 +92,7 @@ impl<'a> CreationContext<'a> {
                 .add_relation(dirty_receive, InputOp(receiver2), vec![]);
         let input_sender = Input_ {
             context_tracker: self.0.tracker.clone(),
-            track_index: relation.track_index,
+            tracking_index: relation.tracking_index,
             sender: sender1,
             handler_queue: Rc::clone(self.0.handler_queue()),
             self_index: i,

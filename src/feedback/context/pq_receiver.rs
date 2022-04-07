@@ -1,5 +1,6 @@
-use crate::pipes::Receiver;
 use std::{cmp::Reverse, collections::BinaryHeap};
+
+use crate::pipes::Receiver;
 
 pub struct PQReceiver {
     receiver: Receiver<usize>,

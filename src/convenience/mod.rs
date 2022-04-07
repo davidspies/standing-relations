@@ -1,3 +1,5 @@
+use crate::{Dynamic, Op, Relation, Saved};
+
 pub mod concat;
 pub mod dynamic;
 pub mod feedback;
@@ -9,8 +11,6 @@ pub mod pair;
 pub mod reduce;
 pub mod save;
 pub mod split;
-
-use crate::{Dynamic, Op, Relation, Saved};
 
 pub type Collection<'a, D> = Saved<Dynamic<'a, (D, isize)>>;
 

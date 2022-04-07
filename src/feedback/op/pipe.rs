@@ -1,10 +1,11 @@
-use crate::CountMap;
 use std::{
     cell::RefCell,
     collections::{BTreeMap, HashMap},
     hash::Hash,
     mem,
 };
+
+use crate::core::CountMap;
 
 pub struct Pipe<T>(RefCell<Vec<T>>);
 

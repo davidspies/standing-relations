@@ -5,7 +5,7 @@ mod tracking;
 use std::{cell::RefCell, rc::Rc};
 
 use self::handler_queue::{HandlerPosition, HandlerQueue, IsInputHandler};
-pub use self::tracking::{ContextTracker, TrackIndex};
+pub use self::tracking::{ContextTracker, TrackingIndex};
 
 #[derive(Default)]
 struct Context<'a> {

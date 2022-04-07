@@ -1,8 +1,9 @@
+use std::{collections::HashMap, hash::Hash};
+
 use crate::core::{
     mborrowed::{MBorrowed, OrOwnedDefault},
     CountMap,
 };
-use std::{collections::HashMap, hash::Hash};
 
 pub struct BiMap<X, Y> {
     forward: HashMap<X, HashMap<Y, isize>>,

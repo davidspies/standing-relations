@@ -1,21 +1,25 @@
-mod pq_receiver;
-
-use self::pq_receiver::PQReceiver;
-use super::op::{Instruct, IsFeedback, IsFeeder};
-use crate::{
-    core::{self, TrackIndex},
-    pipes::{self, Receiver, Sender},
-};
 use std::{
     io::{self, Write},
     ops::{Deref, DerefMut},
     sync::{Arc, RwLock},
 };
 
+use crate::core::{
+    self,
+    pipes::{self, Receiver, Sender},
+    TrackingIndex,
+};
+
+use self::pq_receiver::PQReceiver;
+
+use super::op::{Instruct, IsFeedback, IsFeeder};
+
+mod pq_receiver;
+
 pub struct CreationContext<'a, I = ()> {
     inner: core::CreationContext<'a>,
     feeders: Vec<Box<dyn IsFeeder<'a, I> + 'a>>,
-    extra_edges: Arc<RwLock<Vec<(TrackIndex, TrackIndex)>>>,
+    extra_edges: Arc<RwLock<Vec<(TrackingIndex, TrackingIndex)>>>,
     dirty_send: Sender<usize>,
     dirty_receive: Receiver<usize>,
 }
@@ -36,13 +40,13 @@ impl<I> Default for CreationContext<'_, I> {
 pub struct ExecutionContext<'a, I = ()> {
     inner: core::ExecutionContext<'a>,
     feeders: Vec<Box<dyn IsFeeder<'a, I> + 'a>>,
-    extra_edges: Arc<RwLock<Vec<(TrackIndex, TrackIndex)>>>,
+    extra_edges: Arc<RwLock<Vec<(TrackingIndex, TrackingIndex)>>>,
     dirty: PQReceiver,
 }
 
 pub struct ContextTracker {
     inner: core::ContextTracker,
-    extra_edges: Arc<RwLock<Vec<(TrackIndex, TrackIndex)>>>,
+    extra_edges: Arc<RwLock<Vec<(TrackingIndex, TrackingIndex)>>>,
 }
 
 impl ContextTracker {
@@ -89,7 +93,7 @@ impl<'a, I> CreationContext<'a, I> {
     pub(super) fn add_feeder(
         &mut self,
         mut feeder: impl IsFeedback<'a, I> + 'a,
-        extra_edge: Option<(TrackIndex, TrackIndex)>,
+        extra_edge: Option<(TrackingIndex, TrackingIndex)>,
     ) {
         let mut dirty_send = self.dirty_send.clone();
         let i = self.feeders.len();

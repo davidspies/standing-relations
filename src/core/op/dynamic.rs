@@ -42,7 +42,7 @@ impl<C: Op_> Relation<C> {
         self.context_tracker.add_relation(
             self.dirty,
             Dynamic(Box::new(self.inner)),
-            vec![self.track_index],
+            vec![self.tracking_index],
         )
     }
 }

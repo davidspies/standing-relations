@@ -1,8 +1,9 @@
+use std::collections::HashMap;
+
 use crate::tests::{
     game::{Either, IsGame, IsOutcome, IsPlayer, IsPosition},
     ttt::{self, TTT},
 };
-use std::collections::HashMap;
 
 pub fn solve<Game: IsGame>(g: &Game) -> HashMap<Game::Position, Game::Outcome> {
     let mut result = HashMap::new();

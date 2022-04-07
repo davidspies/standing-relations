@@ -1,5 +1,6 @@
-use crate::tests::game::{IsOutcome, IsPlayer};
 use std::cmp::{Ordering, Reverse};
+
+use crate::tests::game::{IsOutcome, IsPlayer};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Outcome {

@@ -1,20 +1,19 @@
-use crate::core::{
-    context::ContextTracker, dirty::DirtyReceive, relation::RelationInner, CountMap,
-    CreationContext, ExecutionContext, Op, Relation,
-};
 use std::{
     cell::{Ref, RefCell},
     collections::HashMap,
 };
 
-use super::TrackIndex;
+use super::{
+    dirty::DirtyReceive, relation::RelationInner, ContextTracker, CountMap, CreationContext,
+    ExecutionContext, Op, Relation, TrackingIndex,
+};
 
 impl<C: Op> Relation<C> {
-    pub fn get_output_<M: CountMap<C::D>>(self, context: &CreationContext) -> Output<C::D, C, M> {
+    pub fn into_output_<M: CountMap<C::D>>(self, context: &CreationContext) -> Output<C::D, C, M> {
         assert_eq!(&self.context_tracker, context.tracker(), "Context mismatch");
         Output {
             context_tracker: self.context_tracker,
-            track_index: self.track_index,
+            tracking_index: self.tracking_index,
             dirty: RefCell::new(self.dirty.into_receive()),
             inner: RefCell::new(self.inner),
             data: RefCell::new(M::empty()),
@@ -24,7 +23,7 @@ impl<C: Op> Relation<C> {
 
 pub struct Output<D, C: Op<D = D>, M: CountMap<D> = HashMap<D, isize>> {
     context_tracker: ContextTracker,
-    track_index: TrackIndex,
+    tracking_index: TrackingIndex,
     dirty: RefCell<DirtyReceive>,
     inner: RefCell<RelationInner<C>>,
     data: RefCell<M>,
@@ -45,7 +44,7 @@ impl<C: Op, M: CountMap<C::D>> Output<C::D, C, M> {
         assert_eq!(&self.context_tracker, context.tracker(), "Context mismatch");
         self.dirty.borrow_mut().add_listener(f)
     }
-    pub fn get_track_index(&self) -> TrackIndex {
-        self.track_index
+    pub fn tracking_index(&self) -> TrackingIndex {
+        self.tracking_index
     }
 }

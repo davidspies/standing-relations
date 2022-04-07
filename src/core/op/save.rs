@@ -1,13 +1,14 @@
+use std::{
+    cell::{Ref, RefCell},
+    rc::Rc,
+};
+
 use crate::core::{
-    context::{ContextTracker, TrackIndex},
+    context::{ContextTracker, TrackingIndex},
     dirty::DirtyReceive,
     pipes::{self, Receiver, Sender},
     relation::RelationInner,
     Op_, Relation,
-};
-use std::{
-    cell::{Ref, RefCell},
-    rc::Rc,
 };
 
 pub struct Save<C: Op_> {
@@ -24,7 +25,7 @@ struct SaveInner<C: Op_> {
 pub struct Saved<C: Op_> {
     context_tracker: ContextTracker,
     inner: Rc<RefCell<SaveInner<C>>>,
-    track_index: TrackIndex,
+    tracking_index: TrackingIndex,
 }
 
 impl<C: Op_> Clone for Saved<C> {
@@ -32,7 +33,7 @@ impl<C: Op_> Clone for Saved<C> {
         Self {
             context_tracker: self.context_tracker.clone(),
             inner: Rc::clone(&self.inner),
-            track_index: self.track_index,
+            tracking_index: self.tracking_index,
         }
     }
 }
@@ -46,7 +47,7 @@ impl<C: Op_> Saved<C> {
                 senders: Vec::new(),
                 dirty: rel.dirty.into_receive(),
             })),
-            track_index: rel.track_index,
+            tracking_index: rel.tracking_index,
         }
     }
     pub fn get_shown(&self) -> Relation<Save<C>>
@@ -65,7 +66,7 @@ impl<C: Op_> Saved<C> {
                 inner: self.clone(),
                 receiver,
             },
-            vec![self.track_index],
+            vec![self.tracking_index],
         )
     }
     pub(super) fn borrow(&self) -> Ref<RelationInner<C>> {

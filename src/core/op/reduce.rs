@@ -1,17 +1,17 @@
-mod map;
-
-use self::map::{InsertResult, OutputMap};
-use crate::core::{
-    context::ContextTracker, relation::RelationInner, CountMap, CreationContext, ExecutionContext,
-    Observable, Op, Op_, Relation, Save,
-};
 use std::{
     cell::{Ref, RefCell},
     collections::{HashMap, HashSet},
     hash::Hash,
 };
 
-use super::save::Saved;
+use crate::core::{
+    relation::RelationInner, ContextTracker, CountMap, CreationContext, ExecutionContext,
+    Observable, Op, Op_, Relation, Save, Saved,
+};
+
+use self::map::{InsertResult, OutputMap};
+
+mod map;
 
 pub struct Reduce<
     K,
@@ -95,7 +95,7 @@ impl<C: Op<D = (K, X)>, K: Clone + Eq + Hash, X> Relation<C> {
                 out_map: Default::default(),
                 f,
             },
-            vec![self.track_index],
+            vec![self.tracking_index],
         )
     }
 }

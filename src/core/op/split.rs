@@ -1,10 +1,11 @@
+use std::{cell::RefCell, rc::Rc};
+
 use crate::core::{
     dirty::DirtyReceive,
     pipes::{self, Receiver, Sender},
     relation::RelationInner,
     Op_, Relation,
 };
-use std::{cell::RefCell, rc::Rc};
 
 pub struct Split<T, C: Op_<T = (L, R)>, L, R> {
     inner: Rc<RefCell<SplitInner<C, L, R>>>,
@@ -60,7 +61,7 @@ impl<C: Op_<T = (L, R)>, L, R> Relation<C> {
                 inner: Rc::clone(&inner),
                 receiver: left_receiver,
             },
-            vec![self.track_index],
+            vec![self.tracking_index],
         );
         let right_result = self.context_tracker.add_relation(
             right_dirty,
@@ -68,7 +69,7 @@ impl<C: Op_<T = (L, R)>, L, R> Relation<C> {
                 inner,
                 receiver: right_receiver,
             },
-            vec![self.track_index],
+            vec![self.tracking_index],
         );
         (left_result, right_result)
     }
