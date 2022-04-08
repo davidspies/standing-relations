@@ -1,8 +1,15 @@
-use std::{collections::HashMap, convert::identity, fmt::Debug, iter, ops::Neg};
+use std::{
+    collections::{BTreeMap, HashMap},
+    convert::identity,
+    fmt::Debug,
+    iter,
+    ops::Neg,
+};
 
 use crate::{pair::Pair, Op, Op_, Relation};
 
 pub type KVMap<K, V> = HashMap<K, HashMap<V, isize>>;
+pub type ExtremaMap<K, V> = BTreeMap<K, HashMap<V, isize>>;
 
 impl<C: Op_> Relation<C> {
     pub fn map_<Y, F: Fn(C::T) -> Y>(self, f: F) -> Relation<impl Op_<T = Y>> {

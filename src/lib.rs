@@ -3,6 +3,8 @@
 pub use self::{
     convenience::{
         input::{Input, InputRelation},
+        map::ExtremaMap,
+        output::{CollectionOutput, DynamicOutput},
         pair, Collection, Is,
     },
     core::{
