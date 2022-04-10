@@ -1,8 +1,6 @@
 use std::{
     cell::RefCell,
-    collections::HashMap,
     hash::Hash,
-    io::{self, Write},
     ops::{Deref, DerefMut},
     rc::Rc,
     sync::{Arc, RwLock},
@@ -12,16 +10,23 @@ use crate::{
     core::{
         self,
         pipes::{self, Receiver, Sender},
-        CountMap, TrackingIndex,
+        TrackingIndex,
     },
     Input, InputRelation,
 };
 
-use self::pq_receiver::PQReceiver;
+use self::{
+    input_change_tracker::{InputChangeTracker, IsInputChangeTracker},
+    pq_receiver::PQReceiver,
+};
 
 use super::op::{Instruct, IsFeedback, IsFeeder};
 
+pub use self::tracker::ContextTracker;
+
+mod input_change_tracker;
 mod pq_receiver;
+mod tracker;
 
 pub struct CreationContext<'a, I = ()> {
     inner: core::CreationContext<'a>,
@@ -54,18 +59,6 @@ pub struct ExecutionContext<'a, I = ()> {
     dirty: PQReceiver,
 }
 
-pub struct ContextTracker {
-    inner: core::ContextTracker,
-    extra_edges: Arc<RwLock<Vec<(TrackingIndex, TrackingIndex)>>>,
-}
-
-impl ContextTracker {
-    pub fn dump_dot(&self, file: impl Write) -> Result<(), io::Error> {
-        self.inner
-            .dump_dot(file, &*self.extra_edges.read().unwrap())
-    }
-}
-
 impl<'a, I> ExecutionContext<'a, I> {
     pub fn commit(&mut self) -> Option<I> {
         loop {
@@ -81,10 +74,7 @@ impl<'a, I> ExecutionContext<'a, I> {
         }
     }
     pub fn tracker(&self) -> ContextTracker {
-        ContextTracker {
-            inner: self.inner.tracker().clone(),
-            extra_edges: self.extra_edges.clone(),
-        }
+        ContextTracker::new(self.inner.tracker().clone(), self.extra_edges.clone())
     }
     pub fn in_frame<R>(&mut self, f: impl FnOnce(&mut Self) -> R) -> R {
         for input_tracker in self.input_trackers.iter() {
@@ -98,53 +88,20 @@ impl<'a, I> ExecutionContext<'a, I> {
     }
 }
 
-trait IsInputChangeTracker<I> {
-    fn push_frame(&mut self);
-    fn pop_frame(&mut self, context: &ExecutionContext<I>);
-}
-
-struct InputChangeTracker<'a, D> {
-    input: Input<'a, D>,
-    reversion_stack: Vec<HashMap<D, isize>>,
-}
-
-impl<D, I> IsInputChangeTracker<I> for InputChangeTracker<'_, D> {
-    fn push_frame(&mut self) {
-        self.reversion_stack.push(HashMap::new())
-    }
-    fn pop_frame(&mut self, context: &ExecutionContext<I>) {
-        if let Some(changes) = self.reversion_stack.pop() {
-            self.input
-                .silent_send_all(context, changes.into_iter().collect())
-        }
-    }
-}
-
-impl<'a, D> InputChangeTracker<'a, D> {
-    fn new(input: Input<'a, D>) -> Self {
-        Self {
-            input,
-            reversion_stack: Vec::new(),
-        }
-    }
-}
-
 impl<'a, I> CreationContext<'a, I> {
     pub fn new_() -> Self {
         Default::default()
     }
-    pub fn new_trackable_input<D: Eq + Hash + Clone + 'a>(&mut self) -> (Input<'a, D>, InputRelation<D>) {
+    pub fn new_trackable_input<D: Eq + Hash + Clone + 'a>(
+        &mut self,
+    ) -> (Input<'a, D>, InputRelation<D>) {
         let (mut input, relation) = self.inner.new_input_::<(D, isize)>();
         let tracker: Rc<RefCell<InputChangeTracker<D>>> =
             Rc::new(RefCell::new(InputChangeTracker::new(input.clone())));
         {
             let tracker = Rc::clone(&tracker);
             input.add_listener(&self.inner, move |kvs| {
-                if let Some(hm) = tracker.borrow_mut().reversion_stack.last_mut() {
-                    for &(ref k, v) in kvs {
-                        hm.add(k.clone(), -v)
-                    }
-                }
+                tracker.borrow_mut().add_changes(kvs)
             });
         }
         self.input_trackers.push(tracker);
@@ -173,10 +130,7 @@ impl<'a, I> CreationContext<'a, I> {
         }
     }
     pub fn tracker(&self) -> ContextTracker {
-        ContextTracker {
-            inner: self.inner.tracker().clone(),
-            extra_edges: self.extra_edges.clone(),
-        }
+        ContextTracker::new(self.inner.tracker().clone(), self.extra_edges.clone())
     }
 }
 
