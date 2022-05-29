@@ -6,7 +6,9 @@ pub trait Intersectable<Rhs> {
     fn intersection(self, rhs: Rhs) -> Self::Output;
 }
 
-impl<'a, K: Eq + Hash, VL, VR> Intersectable<&'a HashMap<K, VR>> for &'a HashMap<K, VL> {
+impl<'a, K: Eq + Hash + 'a, VL: 'a, VR: 'a> Intersectable<&'a HashMap<K, VR>>
+    for &'a HashMap<K, VL>
+{
     type Output = impl Iterator<Item = (&'a K, &'a VL, &'a VR)>;
 
     fn intersection(self, rhs: &'a HashMap<K, VR>) -> Self::Output {
