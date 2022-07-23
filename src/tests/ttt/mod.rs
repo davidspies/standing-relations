@@ -89,13 +89,12 @@ impl IsPosition for Position {
 
 impl Debug for Position {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut chrs = Vec::new();
         for row in 0..3 {
             for col in 0..3 {
-                chrs.push(self.board[row][col].to_chr());
+                write!(f, "{}", self.board[row][col].to_chr())?;
             }
         }
-        write!(f, "{}", chrs.into_iter().collect::<String>())
+        Ok(())
     }
 }
 

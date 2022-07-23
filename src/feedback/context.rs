@@ -63,13 +63,11 @@ impl<'a, I> ExecutionContext<'a, I> {
     pub fn commit(&mut self) -> Option<I> {
         loop {
             self.inner.commit();
-            match self.dirty.pop_min() {
-                Some(feeder_index) => match self.feeders[feeder_index].feed(&self.inner) {
-                    Instruct::Unchanged => (),
-                    Instruct::Changed => self.dirty.insert(feeder_index),
-                    Instruct::Interrupt(interrupted) => return Some(interrupted),
-                },
-                None => return None,
+            let feeder_index = self.dirty.pop_min()?;
+            match self.feeders[feeder_index].feed(&self.inner) {
+                Instruct::Unchanged => (),
+                Instruct::Changed => self.dirty.insert(feeder_index),
+                Instruct::Interrupt(interrupted) => return Some(interrupted),
             }
         }
     }
