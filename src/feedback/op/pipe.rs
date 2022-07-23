@@ -35,9 +35,11 @@ impl<K, V> Default for OrderedPipe<K, V> {
     }
 }
 
-impl<K: Ord, V> OrderedPipe<K, V> {
+impl<K: Clone + Ord, V> OrderedPipe<K, V> {
     pub fn receive(&self) -> Option<(K, HashMap<V, isize>)> {
-        self.0.borrow_mut().pop_first()
+        let mut this = self.0.borrow_mut();
+        let first_key = this.keys().next()?.clone();
+        Some(this.remove_entry(&first_key).unwrap())
     }
 }
 

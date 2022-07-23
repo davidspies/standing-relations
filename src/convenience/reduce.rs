@@ -45,14 +45,14 @@ impl<C: Op<D = (K, V)>, K: Clone + Eq + Hash, V> Relation<C> {
     where
         V: Clone + Ord,
     {
-        self.reduce_(|_, m: &BTreeMap<V, isize>| m.first_key_value().unwrap().0.clone())
+        self.reduce_(|_, m: &BTreeMap<V, isize>| m.keys().next().unwrap().clone())
             .type_named("group_min")
     }
     pub fn group_max(self) -> Relation<impl IsReduce<T = ((K, V), isize), OM = HashMap<K, V>>>
     where
         V: Clone + Ord,
     {
-        self.reduce_(|_, m: &BTreeMap<V, isize>| m.last_key_value().unwrap().0.clone())
+        self.reduce_(|_, m: &BTreeMap<V, isize>| m.keys().next_back().unwrap().clone())
             .type_named("group_max")
     }
 }

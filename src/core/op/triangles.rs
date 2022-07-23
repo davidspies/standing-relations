@@ -3,12 +3,9 @@ mod intersection;
 
 use std::hash::Hash;
 
-use crate::core::{
-    op::triangles::intersection::Intersectable, relation::RelationInner, CountMap, Op, Op_,
-    Relation,
-};
+use crate::core::{relation::RelationInner, CountMap, Op, Op_, Relation};
 
-use self::bimap::BiMap;
+use self::{bimap::BiMap, intersection::intersection};
 
 pub struct Triangles<X, Y, Z, C1: Op<D = (X, Y)>, C2: Op<D = (X, Z)>, C3: Op<D = (Y, Z)>> {
     c1: RelationInner<C1>,
@@ -37,7 +34,7 @@ impl<
         self.c1.foreach(|((x, y), count)| {
             let xzs = mapxz.get_forward(&x);
             let yzs = mapyz.get_forward(&y);
-            for (z, lcount, rcount) in xzs.intersection(&yzs) {
+            for (z, lcount, rcount) in intersection(&xzs, &yzs) {
                 continuation(((x.clone(), y.clone(), z.clone()), count * lcount * rcount))
             }
             mapxy.add((x, y), count);
@@ -45,7 +42,7 @@ impl<
         self.c2.foreach(|((x, z), count)| {
             let xys = mapxy.get_forward(&x);
             let zys = mapyz.get_backward(&z);
-            for (y, lcount, rcount) in xys.intersection(&zys) {
+            for (y, lcount, rcount) in intersection(&xys, &zys) {
                 continuation(((x.clone(), y.clone(), z.clone()), count * lcount * rcount))
             }
             mapxz.add((x, z), count);
@@ -53,7 +50,7 @@ impl<
         self.c3.foreach(|((y, z), count)| {
             let yxs = mapxy.get_backward(&y);
             let zxs = mapxz.get_backward(&z);
-            for (x, lcount, rcount) in yxs.intersection(&zxs) {
+            for (x, lcount, rcount) in intersection(&yxs, &zxs) {
                 continuation(((x.clone(), y.clone(), z.clone()), count * lcount * rcount))
             }
             mapyz.add((y, z), count);

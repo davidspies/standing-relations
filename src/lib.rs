@@ -1,5 +1,3 @@
-#![feature(map_first_last, type_alias_impl_trait)]
-
 pub use self::{
     convenience::{
         input::{Input, InputRelation},
