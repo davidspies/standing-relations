@@ -93,7 +93,7 @@ impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C> {
     }
 }
 
-impl<'a, K: Clone + Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeeder<'a, I>
+impl<'a, K: Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeeder<'a, I>
     for FeedbackOrdered<'a, K, V, C>
 {
     fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
@@ -108,7 +108,7 @@ impl<'a, K: Clone + Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeeder<'a, I>
     }
 }
 
-impl<'a, K: Clone + Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeedback<'a, I>
+impl<'a, K: Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeedback<'a, I>
     for FeedbackOrdered<'a, K, V, C>
 {
     fn add_listener(&mut self, context: &core::CreationContext, f: impl FnMut() + 'static) {
@@ -156,7 +156,7 @@ impl<'a, I> CreationContext<'a, I> {
     /// those with the minimum present ordering key are fed back in. If any later changes are cancelled
     /// out as a result of this (if their count goes to zero), then they will not be fed in at all.
     /// This can be handy in situations where using `feed` naively can cause an infinite loop.
-    pub fn feed_ordered<K: Clone + Ord + 'a, V: Eq + Hash + 'a>(
+    pub fn feed_ordered<K: Ord + 'a, V: Eq + Hash + 'a>(
         &mut self,
         rel: Relation<impl Op<D = (K, V)> + 'a>,
         input: Input<'a, V>,
