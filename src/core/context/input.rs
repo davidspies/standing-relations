@@ -23,13 +23,15 @@ impl<T> IsInputHandler for InputHandler<T> {
     }
 }
 
+type Listeners<'a, T> = Vec<Box<dyn FnMut(&[T]) + 'a>>;
+
 pub struct Input_<'a, T> {
     context_tracker: ContextTracker,
     tracking_index: TrackingIndex,
     sender: pipes::Sender<T>,
     handler_queue: Rc<RefCell<HandlerQueue<'a>>>,
     self_index: HandlerPosition,
-    listeners: Rc<RefCell<Vec<Box<dyn FnMut(&[T]) + 'a>>>>,
+    listeners: Rc<RefCell<Listeners<'a, T>>>,
 }
 
 impl<T> Clone for Input_<'_, T> {

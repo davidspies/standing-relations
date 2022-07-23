@@ -9,7 +9,7 @@ impl<T> PartialEq for Unordered<T> {
 impl<T> Eq for Unordered<T> {}
 impl<T> PartialOrd for Unordered<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 impl<T> Ord for Unordered<T> {

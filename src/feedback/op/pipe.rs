@@ -32,7 +32,9 @@ impl<D> CountMap<D> for Pipe<(D, isize)> {
     }
 }
 
-pub struct OrderedPipe<K, V>(RefCell<BinaryHeap<(Reverse<K>, Unordered<(V, isize)>)>>);
+type KeyedMinHeap<K, V> = BinaryHeap<(Reverse<K>, Unordered<(V, isize)>)>;
+
+pub struct OrderedPipe<K, V>(RefCell<KeyedMinHeap<K, V>>);
 
 impl<K: Ord, V> Default for OrderedPipe<K, V> {
     fn default() -> Self {
