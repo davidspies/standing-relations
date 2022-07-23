@@ -46,7 +46,11 @@ impl<T> Clone for Input_<'_, T> {
 }
 
 impl<'a, T> Input_<'a, T> {
-    pub(crate) fn add_listener(&mut self, context: &CreationContext, listener: impl FnMut(&[T]) + 'a) {
+    pub(crate) fn add_listener(
+        &mut self,
+        context: &CreationContext,
+        listener: impl FnMut(&[T]) + 'a,
+    ) {
         assert_eq!(self.context_tracker, context.0.tracker, "Context mismatch");
         self.listeners.borrow_mut().push(Box::new(listener));
     }
