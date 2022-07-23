@@ -1,4 +1,4 @@
-pub use self::context::{ContextTracker, CreationContext, ExecutionContext};
+pub use self::context::{CommitId, ContextTracker, CreationContext, ExecutionContext};
 
 mod context;
 mod op;

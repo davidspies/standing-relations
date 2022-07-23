@@ -4,7 +4,7 @@ use crate::{core, CountMap, Input, Observable, Op, Output, Relation};
 
 use self::pipe::{OrderedPipe, Pipe};
 
-use super::context::CreationContext;
+use super::context::{CommitId, CreationContext};
 
 mod checked_foreach;
 mod pipe;
@@ -15,6 +15,14 @@ where
 {
     output: Output<C::D, C>,
     input: Input<'a, C::D>,
+}
+
+pub struct FeedbackWithCommitIdWhile<'a, C: Op>
+where
+    C::D: Eq + Hash,
+{
+    output: Output<C::D, C>,
+    input: Input<'a, (C::D, usize)>,
 }
 
 pub struct Feedback<'a, C: Op> {
@@ -34,7 +42,7 @@ pub struct Interrupter<C: Op, M: CountMap<C::D>, F: Fn(&M) -> I, I> {
 }
 
 pub(crate) trait IsFeeder<'a, I> {
-    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I>;
+    fn feed(&mut self, context: &core::ExecutionContext<'a>, commit_id: CommitId) -> Instruct<I>;
 }
 
 pub(crate) trait IsFeedback<'a, I>: IsFeeder<'a, I> {
@@ -51,7 +59,7 @@ impl<'a, C: Op, I> IsFeeder<'a, I> for FeedbackWhile<'a, C>
 where
     C::D: Clone + Eq + Hash + 'a,
 {
-    fn feed(&mut self, context: &core::ExecutionContext) -> Instruct<I> {
+    fn feed(&mut self, context: &core::ExecutionContext, _commit_id: CommitId) -> Instruct<I> {
         let m = self.output.get(context);
         if m.is_empty() {
             Instruct::Unchanged
@@ -59,6 +67,26 @@ where
             self.input.send_all(
                 context,
                 m.iter().map(|(x, &count)| (x.clone(), count)).collect(),
+            );
+            Instruct::Changed
+        }
+    }
+}
+
+impl<'a, C: Op, I> IsFeeder<'a, I> for FeedbackWithCommitIdWhile<'a, C>
+where
+    C::D: Clone + Eq + Hash + 'a,
+{
+    fn feed(&mut self, context: &core::ExecutionContext, commit_id: CommitId) -> Instruct<I> {
+        let m = self.output.get(context);
+        if m.is_empty() {
+            Instruct::Unchanged
+        } else {
+            self.input.send_all(
+                context,
+                m.iter()
+                    .map(|(x, &count)| ((x.clone(), commit_id), count))
+                    .collect(),
             );
             Instruct::Changed
         }
@@ -74,8 +102,17 @@ where
     }
 }
 
+impl<'a, C: Op, I> IsFeedback<'a, I> for FeedbackWithCommitIdWhile<'a, C>
+where
+    C::D: Clone + Eq + Hash + 'a,
+{
+    fn add_listener(&mut self, context: &core::CreationContext, f: impl FnMut() + 'static) {
+        self.output.add_listener(context, f);
+    }
+}
+
 impl<'a, C: Op, I> IsFeeder<'a, I> for Feedback<'a, C> {
-    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
+    fn feed(&mut self, context: &core::ExecutionContext<'a>, _commit_id: CommitId) -> Instruct<I> {
         let m = self.output.get(context);
         let changes = m.receive();
         if changes.is_empty() {
@@ -96,7 +133,7 @@ impl<'a, C: Op, I> IsFeedback<'a, I> for Feedback<'a, C> {
 impl<'a, K: Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeeder<'a, I>
     for FeedbackOrdered<'a, K, V, C>
 {
-    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
+    fn feed(&mut self, context: &core::ExecutionContext<'a>, _commit_id: CommitId) -> Instruct<I> {
         let m = self.output.get(context);
         match m.receive() {
             None => Instruct::Unchanged,
@@ -119,7 +156,7 @@ impl<'a, K: Ord, V: Eq + Hash, C: Op<D = (K, V)>, I> IsFeedback<'a, I>
 impl<'a, C: Op, M: CountMap<C::D> + Observable, F: Fn(&M) -> I, I> IsFeeder<'a, I>
     for Interrupter<C, M, F, I>
 {
-    fn feed(&mut self, context: &core::ExecutionContext<'a>) -> Instruct<I> {
+    fn feed(&mut self, context: &core::ExecutionContext<'a>, _commit_id: CommitId) -> Instruct<I> {
         let m = self.output.get(context);
         if m.is_empty() {
             Instruct::Unchanged
@@ -192,5 +229,16 @@ impl<'a, I> CreationContext<'a, I> {
     ) {
         let edge = (output.tracking_index(), input.tracking_index());
         self.add_feeder(FeedbackWhile { output, input }, Some(edge))
+    }
+
+    /// Similar to `feed_while`, but additionally provides to the input the `CommitId` on which the change
+    /// was added in order to help determine the order of operations after the fact.
+    pub fn feed_with_commit_id_while<D: Clone + Eq + Hash + 'a>(
+        &mut self,
+        output: Output<D, impl Op<D = D> + 'a>,
+        input: Input<'a, (D, CommitId)>,
+    ) {
+        let edge = (output.tracking_index(), input.tracking_index());
+        self.add_feeder(FeedbackWithCommitIdWhile { output, input }, Some(edge))
     }
 }

@@ -51,8 +51,11 @@ impl<I> Default for CreationContext<'_, I> {
     }
 }
 
+pub type CommitId = usize;
+
 pub struct ExecutionContext<'a, I = ()> {
     inner: core::ExecutionContext<'a>,
+    commit_id: CommitId,
     feeders: Vec<Box<dyn IsFeeder<'a, I> + 'a>>,
     input_trackers: Vec<Rc<RefCell<dyn IsInputChangeTracker<I> + 'a>>>,
     extra_edges: Arc<RwLock<Vec<(TrackingIndex, TrackingIndex)>>>,
@@ -60,11 +63,16 @@ pub struct ExecutionContext<'a, I = ()> {
 }
 
 impl<'a, I> ExecutionContext<'a, I> {
+    pub fn commit_id(&self) -> CommitId {
+        self.commit_id
+    }
     pub fn commit(&mut self) -> Option<I> {
         loop {
             self.inner.commit();
             let feeder_index = self.dirty.pop_min()?;
-            match self.feeders[feeder_index].feed(&self.inner) {
+            let instruction = self.feeders[feeder_index].feed(&self.inner, self.commit_id);
+            self.commit_id += 1;
+            match instruction {
                 Instruct::Unchanged => (),
                 Instruct::Changed => self.dirty.insert(feeder_index),
                 Instruct::Interrupt(interrupted) => return Some(interrupted),
@@ -108,6 +116,7 @@ impl<'a, I> CreationContext<'a, I> {
     pub fn begin(self) -> ExecutionContext<'a, I> {
         ExecutionContext {
             inner: self.inner.begin(),
+            commit_id: 0,
             feeders: self.feeders,
             input_trackers: self.input_trackers,
             extra_edges: self.extra_edges,

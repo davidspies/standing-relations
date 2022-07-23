@@ -9,7 +9,7 @@ pub use self::{
         pipes, CountMap, Dynamic, Input_, IsReduce, Observable, Op, Op_, Output, ReduceProbe,
         Relation, Save, Saved,
     },
-    feedback::{ContextTracker, CreationContext, ExecutionContext},
+    feedback::{CommitId, ContextTracker, CreationContext, ExecutionContext},
 };
 
 mod convenience;
