@@ -13,8 +13,7 @@ pub struct ContextTracker {
 
 impl ContextTracker {
     pub fn dump_dot(&self, file: impl Write) -> Result<(), io::Error> {
-        self.inner
-            .dump_dot(file, &*self.extra_edges.read().unwrap())
+        self.inner.dump_dot(file, &self.extra_edges.read().unwrap())
     }
 
     pub(super) fn new(
