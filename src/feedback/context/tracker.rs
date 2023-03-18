@@ -5,6 +5,7 @@ use std::{
 
 use crate::core::{self, TrackingIndex};
 
+#[derive(Clone)]
 pub struct ContextTracker {
     inner: core::ContextTracker,
     extra_edges: Arc<RwLock<Vec<(TrackingIndex, TrackingIndex)>>>,
