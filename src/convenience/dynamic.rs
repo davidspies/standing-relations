@@ -1,5 +1,7 @@
 use crate::{Dynamic, Op_, Relation};
 
+pub type RelD<'a, D> = Relation<Dynamic<'a, (D, isize)>>;
+
 impl<C: Op_> Relation<C> {
     /// Simplifies the inferred type-signature of a relation at the cost of requiring dynamic
     /// dispatch at runtime.

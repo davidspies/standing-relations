@@ -1,5 +1,6 @@
 pub use self::{
     convenience::{
+        dynamic::RelD,
         input::{Input, InputRelation},
         map::ExtremaMap,
         output::{CollectionOutput, DynamicOutput},
