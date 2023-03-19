@@ -28,6 +28,22 @@ impl<C: Op_> Relation<C> {
 }
 
 impl<C: Op> Relation<C> {
+    pub fn conditional_debug<F: Fn(&C::D) -> bool>(
+        self,
+        name: &'static str,
+        f: F,
+    ) -> Relation<impl Op<D = C::D>>
+    where
+        C::D: Debug,
+    {
+        self.map_(move |(x, count)| {
+            if f(&x) {
+                log::debug!("{}: {:?}", name, (&x, count));
+            }
+            (x, count)
+        })
+    }
+
     pub fn flat_map<I: IntoIterator>(
         self,
         f: impl Fn(C::D) -> I,
